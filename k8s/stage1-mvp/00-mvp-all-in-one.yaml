@@ -106,7 +106,7 @@ spec:
     spec:
       containers:
         - name: tomcat
-          image: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-was:v1.1
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-was:v1.2
           ports:
             - containerPort: 8080
           volumeMounts:

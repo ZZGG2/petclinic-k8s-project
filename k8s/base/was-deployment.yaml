@@ -36,7 +36,7 @@ spec:
       containers:
         - name: tomcat
           # ECR 푸시 후 본인 계정의 ECR URI로 교체 (또는 kustomize images로 오버라이드)
-          image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-was:v1.1"
+          image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-was:v1.2"
           ports:
             - name: http
               containerPort: 8080

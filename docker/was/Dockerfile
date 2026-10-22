@@ -22,8 +22,6 @@ FROM tomcat:11.0-jdk17-temurin
 
 # Remove default webapps and deploy as /petclinic context path
 # [Fix] war 파일 대신 "압축 해제된 디렉터리"로 배포
-#  - 빌드 시 -P MySQL 이 data-access.properties에 jdbc.url=localhost 를 박아 넣고,
-#    런타임 -Djdbc.url 덮어쓰기가 적용되지 않음 (트러블슈팅 확인)
 #  - 디렉터리로 풀어두면 K8s에서 WEB-INF/classes/spring/data-access.properties 파일 하나만
 #    Secret(subPath)으로 교체해 DB 접속 정보를 "런타임"에 주입할 수 있음
 RUN rm -rf /usr/local/tomcat/webapps/*
@@ -33,6 +31,21 @@ RUN mkdir -p /usr/local/tomcat/webapps/petclinic \
  && jar -xf /tmp/petclinic.war \
  && rm /tmp/petclinic.war \
  && ls WEB-INF/classes/spring/data-access.properties
+
+# [Fix] Maven 리소스 필터링이 XML의 ${jdbc.*} 플레이스홀더까지 빌드 시점 값(localhost)으로 치환함
+#  → datasource-config.xml 에 p:url="jdbc:mysql://localhost:3306/..." 가 "하드코딩"되어
+#    -D 옵션이나 properties 파일로는 절대 바꿀 수 없음 (트러블슈팅으로 확인)
+#  → 빌드가 끝난 뒤 XML을 다시 플레이스홀더로 되돌려 런타임 설정(data-access.properties)을 읽게 함
+#    (빌드 전에 고치면 Maven이 다시 치환하므로 반드시 "빌드 후"에 수정)
+RUN cd /usr/local/tomcat/webapps/petclinic/WEB-INF/classes/spring \
+ && sed -i -E \
+      -e 's#p:driverClassName="[^"]*"#p:driverClassName="${jdbc.driverClassName}"#' \
+      -e 's#p:url="[^"]*"#p:url="${jdbc.url}"#' \
+      -e 's#p:username="[^"]*"#p:username="${jdbc.username}"#' \
+      -e 's#p:password="[^"]*"#p:password="${jdbc.password}"#' \
+      datasource-config.xml \
+ && grep -n "p:url" datasource-config.xml \
+ && ! grep -q "localhost:3306" datasource-config.xml
 
 EXPOSE 8080
 CMD ["catalina.sh", "run"]
