@@ -1,0 +1,12 @@
+# ==============================================================================
+# prod 전용 패치: RDS 마스터 계정 이름은 root가 아니라 admin
+#  - base의 Secret(petclinic-db-secret) 중 DB_ADMIN_USER 값만 덮어씀 (나머지 키는 base 그대로)
+#  - "base는 그대로 두고, 환경마다 다른 값만 overlay에서 바꾼다" 의 예시
+# ==============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: petclinic-db-secret
+  namespace: petclinic
+stringData:
+  DB_ADMIN_USER: "admin"

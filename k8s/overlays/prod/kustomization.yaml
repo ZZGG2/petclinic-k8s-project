@@ -11,6 +11,10 @@ resources:
   - db-externalname-svc.yaml   # Service petclinic-db → RDS 엔드포인트
   - db-seed-job.yaml           # RDS에 스키마/데이터 적재 + 앱 계정 DML 권한
 
+# base 리소스의 일부 값만 덮어쓰기 (Strategic Merge Patch)
+patches:
+  - path: db-admin-user-patch.yaml
+
 labels:
   - pairs:
       env: prod
