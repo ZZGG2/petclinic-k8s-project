@@ -5,6 +5,16 @@ WORKDIR /build
 # Git clone or copy source from spring-framework-petclinic
 COPY pom.xml .
 COPY src ./src
+
+# [Fix] MySQL 드라이버 좌표 변경 대응
+#  - mysql:mysql-connector-java 는 8.0.31부터 com.mysql:mysql-connector-j 로 이전됨
+#  - 8.1.0은 옛 좌표(mysql:mysql-connector-java)에 jar가 없어 의존성 해결 실패
+#  - 원본 소스는 건드리지 않고, 빌드 시점에만 pom.xml의 groupId/artifactId를 교체
+RUN sed -i \
+      -e 's#<groupId>mysql</groupId>#<groupId>com.mysql</groupId>#' \
+      -e 's#<artifactId>mysql-connector-java</artifactId>#<artifactId>mysql-connector-j</artifactId>#' \
+      pom.xml \
+ && grep -n -A1 "<groupId>com.mysql</groupId>" pom.xml
 RUN mvn clean package -P MySQL -DskipTests
 
 # Stage 2: Runtime on Tomcat 11 (Jakarta EE 10/11 compatible)
