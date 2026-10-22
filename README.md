@@ -41,7 +41,7 @@
      ```xml
      <context:property-placeholder location="classpath:spring/data-access.properties" system-properties-mode="OVERRIDE"/>
      ```
-   * `system-properties-mode="OVERRIDE"` 설정에 의해, 컨테이너 실행 시 `ConfigMap`과 `Secret` 값을 JVM 시스템 프로퍼티(`JAVA_OPTS`의 `-Djdbc.url=... -Djdbc.username=... -Djdbc.password=...`)로 전달하면 이미지를 다시 빌드하지 않고도 런타임에 DB 접속 정보를 덮어쓸 수 있습니다.
+   * `system-properties-mode="OVERRIDE"` 설정에 의해, 컨테이너 실행 시 `ConfigMap`과 `Secret` 값을 JVM 시스템 프로퍼티(`JDK_JAVA_OPTIONS`의 `-Djdbc.url=... -Djdbc.username=... -Djdbc.password=...`)로 전달하면 이미지를 다시 빌드하지 않고도 런타임에 DB 접속 정보를 덮어쓸 수 있습니다.
    * **캐시 동작 주의 (`vets` 조회)**: `ClinicServiceImpl.findVets()`에는 `tools-config.xml`에 정의된 Caffeine 캐시(`@Cacheable("vets")`)가 걸려 있습니다. 즉, `/petclinic/vets`는 첫 호출 이후에는 DB 쿼리를 실행하지 않고 메모리 캐시에서 바로 반환하므로, DB 연결 상태를 확인하는 Readiness Probe 경로로 사용하면 안 됩니다.
 
 ---
@@ -211,7 +211,7 @@ server {
 * **설계 근거**: `src/main/resources/db/mysql/data.sql`은 모두 `INSERT IGNORE`로 작성되어 있어 중복 실행으로 인한 크래시는 발생하지 않습니다. 하지만 운영 보안 측면에서 **테이블을 생성하는 DDL(`schema.sql`)과 초기 데이터 적재는 관리자(admin) 계정을 사용하는 쿠버네티스 `Job`(`petclinic-db-seed`)이 최초 1회만 실행**하고, 상주 구동되는 **WAS 애플리케이션 계정은 DML(`SELECT, INSERT, UPDATE, DELETE`) 권한만 갖도록(최소 권한 원칙)** 분리합니다.
 * **WAS 자동 초기화 끄기 (1일차 검증 항목)**:
   * `datasource-config.xml`의 `<jdbc:initialize-database>`는 `jdbc.initLocation`과 `jdbc.dataLocation` 프로퍼티 경로의 스크립트를 실행합니다.
-  * 따라서 주석(`SELECT 1;`)만 들어 있는 빈 SQL 파일(`empty.sql`)을 `ConfigMap`으로 마운트(`/config/empty.sql`)하고, `JAVA_OPTS`에서 아래 옵션을 주입해 WAS 기동 시 초기화 로직을 무해하게 통과시킵니다:
+  * 따라서 주석(`SELECT 1;`)만 들어 있는 빈 SQL 파일(`empty.sql`)을 `ConfigMap`으로 마운트(`/config/empty.sql`)하고, `JDK_JAVA_OPTIONS`에서 아래 옵션을 주입해 WAS 기동 시 초기화 로직을 무해하게 통과시킵니다:
     ```text
     -Djdbc.initLocation=file:/config/empty.sql
     -Djdbc.dataLocation=file:/config/empty.sql

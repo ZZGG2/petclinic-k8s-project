@@ -90,7 +90,10 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            - name: JAVA_OPTS
+            # ⚠️ JAVA_OPTS가 아닌 JDK_JAVA_OPTIONS 사용
+            #   catalina.sh는 JAVA_OPTS를 eval로 펼치므로 URL의 '&'(백그라운드 실행), 비밀번호의 '#'(주석)이
+            #   셸 문법으로 해석돼 JVM이 비정상 종료됨 → java 런처가 직접 읽는 JDK_JAVA_OPTIONS는 셸을 거치지 않음
+            - name: JDK_JAVA_OPTIONS
               value: >-
                 -Dspring.profiles.active=jpa
                 -Djdbc.url=jdbc:mysql://petclinic-db:3306/petclinic?useUnicode=true&characterEncoding=UTF-8

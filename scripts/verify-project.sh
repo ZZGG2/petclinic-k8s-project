@@ -59,7 +59,7 @@ check "LimitRange & ResourceQuota 적용 확인" \
   bash -c "k get limitrange petclinic-limits -n '$NS' && k get resourcequota petclinic-quota -n '$NS'"
 
 check "WAS Readiness Probe 경로 (/petclinic/owners?lastName=) 및 빈 SQL 마운트 확인" \
-  bash -c "k get deploy petclinic-was -n '$NS' -o jsonpath='{.spec.template.spec.containers[0].readinessProbe.httpGet.path}' | grep -q '/petclinic/owners' && k get deploy petclinic-was -n '$NS' -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name==\"JAVA_OPTS\")].value}' | grep -q 'empty.sql'"
+  bash -c "k get deploy petclinic-was -n '$NS' -o jsonpath='{.spec.template.spec.containers[0].readinessProbe.httpGet.path}' | grep -q '/petclinic/owners' && k get deploy petclinic-was -n '$NS' -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name==\"JDK_JAVA_OPTIONS\")].value}' | grep -q 'empty.sql'"
 
 check "WEB (2+) & WAS (2+) 가용 파드 Ready" \
   bash -c "[ \"\$(k get deploy petclinic-web -n '$NS' -o jsonpath='{.status.availableReplicas}')\" -ge 2 ] && [ \"\$(k get deploy petclinic-was -n '$NS' -o jsonpath='{.status.availableReplicas}')\" -ge 2 ]"
