@@ -53,7 +53,27 @@ spec:
             - name: MYSQL_PASSWORD
               value: "PetClinicApp#2026"
 ---
-# 2. WAS Tier (Stage 1에서는 WAS 내장 초기화로 테이블 자동 생성 확인)
+# 2. WAS Tier
+#    DB 접속 정보는 JVM 옵션(-D)이 아니라 "설정 파일 교체" 방식으로 주입
+#    (빌드 시 박힌 jdbc.url=localhost 를 런타임에 덮어쓰기 위함 — 트러블슈팅 참고)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: petclinic-was-dbconfig
+  namespace: petclinic
+type: Opaque
+stringData:
+  data-access.properties: |
+    # Stage 1: WAS 내장 초기화(schema.sql/data.sql)로 테이블 자동 생성
+    jdbc.initLocation=classpath:db/mysql/schema.sql
+    jdbc.dataLocation=classpath:db/mysql/data.sql
+    jpa.showSql=false
+    jpa.database=MYSQL
+    jdbc.driverClassName=com.mysql.cj.jdbc.Driver
+    jdbc.url=jdbc:mysql://petclinic-db:3306/petclinic?useUnicode=true&characterEncoding=UTF-8
+    jdbc.username=petclinic
+    jdbc.password=PetClinicApp#2026
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -86,19 +106,19 @@ spec:
     spec:
       containers:
         - name: tomcat
-          image: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-was:v1
+          image: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-was:v1.1
           ports:
             - containerPort: 8080
-          env:
-            # ⚠️ JAVA_OPTS가 아닌 JDK_JAVA_OPTIONS 사용
-            #   catalina.sh는 JAVA_OPTS를 eval로 펼치므로 URL의 '&'(백그라운드 실행), 비밀번호의 '#'(주석)이
-            #   셸 문법으로 해석돼 JVM이 비정상 종료됨 → java 런처가 직접 읽는 JDK_JAVA_OPTIONS는 셸을 거치지 않음
-            - name: JDK_JAVA_OPTIONS
-              value: >-
-                -Dspring.profiles.active=jpa
-                -Djdbc.url=jdbc:mysql://petclinic-db:3306/petclinic?useUnicode=true&characterEncoding=UTF-8
-                -Djdbc.username=petclinic
-                -Djdbc.password=PetClinicApp#2026
+          volumeMounts:
+            # subPath: 디렉터리 전체가 아니라 "파일 하나만" 교체 (나머지 클래스/설정 파일은 그대로 유지)
+            - name: dbconfig
+              mountPath: /usr/local/tomcat/webapps/petclinic/WEB-INF/classes/spring/data-access.properties
+              subPath: data-access.properties
+              readOnly: true
+      volumes:
+        - name: dbconfig
+          secret:
+            secretName: petclinic-was-dbconfig
 ---
 # 3. WEB Tier (Nginx 정적 서빙 + /petclinic/ 프록시)
 apiVersion: v1

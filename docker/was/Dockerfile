@@ -21,8 +21,18 @@ RUN mvn clean package -P MySQL -DskipTests
 FROM tomcat:11.0-jdk17-temurin
 
 # Remove default webapps and deploy as /petclinic context path
+# [Fix] war 파일 대신 "압축 해제된 디렉터리"로 배포
+#  - 빌드 시 -P MySQL 이 data-access.properties에 jdbc.url=localhost 를 박아 넣고,
+#    런타임 -Djdbc.url 덮어쓰기가 적용되지 않음 (트러블슈팅 확인)
+#  - 디렉터리로 풀어두면 K8s에서 WEB-INF/classes/spring/data-access.properties 파일 하나만
+#    Secret(subPath)으로 교체해 DB 접속 정보를 "런타임"에 주입할 수 있음
 RUN rm -rf /usr/local/tomcat/webapps/*
-COPY --from=builder /build/target/petclinic.war /usr/local/tomcat/webapps/petclinic.war
+COPY --from=builder /build/target/petclinic.war /tmp/petclinic.war
+RUN mkdir -p /usr/local/tomcat/webapps/petclinic \
+ && cd /usr/local/tomcat/webapps/petclinic \
+ && jar -xf /tmp/petclinic.war \
+ && rm /tmp/petclinic.war \
+ && ls WEB-INF/classes/spring/data-access.properties
 
 EXPOSE 8080
 CMD ["catalina.sh", "run"]

@@ -1,3 +1,4 @@
+# TODO(Stage 2): DB 접속 정보를 JDK_JAVA_OPTIONS(-D)가 아닌 data-access.properties 파일 주입 방식으로 전환 (Stage 1 트러블슈팅 결과)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,7 +36,7 @@ spec:
       containers:
         - name: tomcat
           # ECR 푸시 후 본인 계정의 ECR URI로 교체 (또는 kustomize images로 오버라이드)
-          image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-was:v1"
+          image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-was:v1.1"
           ports:
             - name: http
               containerPort: 8080
