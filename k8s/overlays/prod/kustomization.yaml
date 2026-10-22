@@ -1,3 +1,6 @@
+# ==============================================================================
+# overlay: prod — DB를 Amazon RDS로 대체 (ExternalName Service로 같은 이름 petclinic-db 유지)
+# ==============================================================================
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -5,5 +8,11 @@ namespace: petclinic
 
 resources:
   - ../../base
-  - db-externalname-svc.yaml
-  - db-seed-job.yaml
+  - db-externalname-svc.yaml   # Service petclinic-db → RDS 엔드포인트
+  - db-seed-job.yaml           # RDS에 스키마/데이터 적재 + 앱 계정 DML 권한
+
+labels:
+  - pairs:
+      env: prod
+    includeSelectors: false
+    includeTemplates: false

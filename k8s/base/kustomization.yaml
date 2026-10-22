@@ -1,17 +1,24 @@
+# ==============================================================================
+# base — dev / prod 공통 리소스 (DB를 제외한 전부)
+#  ※ 이미지 주소의 ${AWS_ACCOUNT_ID} 는 Kustomize가 치환하지 않음 → 적용 시 envsubst 파이프 사용
+#    kubectl kustomize k8s/overlays/dev | envsubst '${AWS_ACCOUNT_ID}' | kubectl apply -f -
+# ==============================================================================
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 namespace: petclinic
 
 resources:
+  # 공통 설정
   - namespace.yaml
-  - limit-quota.yaml
-  - config-secret.yaml
-  - was-dbconfig-secret.yaml
-  - db-seed-sql-cm.yaml
-  - db-report-cronjob.yaml
+  - config-secret.yaml          # ConfigMap(petclinic-config, empty.sql) + Secret(petclinic-db-secret)
+  - was-dbconfig-secret.yaml    # WAS data-access.properties
+  - db-seed-sql-cm.yaml         # Seed Job이 실행할 스키마/데이터 SQL
+  # WAS
   - was-deployment.yaml
-  - was-svc-hpa-pdb.yaml
+  - was-service.yaml
+  # WEB
   - web-deployment.yaml
-  - web-svc-pdb.yaml
+  - web-service.yaml
+  # 외부 노출 (Gateway API → ALB)
   - gateway.yaml

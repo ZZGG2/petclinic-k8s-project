@@ -1,3 +1,6 @@
+# ==============================================================================
+# overlay: dev — DB를 클러스터 내부 StatefulSet(+EBS gp3)으로 실행
+# ==============================================================================
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -5,7 +8,16 @@ namespace: petclinic
 
 resources:
   - ../../base
-  - gp3-sc.yaml
-  - db-headless-svc.yaml
-  - db-statefulset.yaml
-  - db-seed-job.yaml
+  - gp3-sc.yaml             # StorageClass (클러스터 범위)
+  - db-headless-svc.yaml    # Service petclinic-db (clusterIP: None)
+  - db-statefulset.yaml     # mysql:8.4 + PVC(gp3 5Gi)
+  - db-seed-job.yaml        # 스키마/데이터 적재 + 앱 계정 DML 권한
+
+# 모든 리소스의 metadata에 env=dev 라벨 추가
+#  - includeSelectors: false → selector는 건드리지 않음 (selector는 생성 후 변경 불가)
+#  - includeTemplates: false → 파드 템플릿도 건드리지 않음 (불필요한 파드 재시작 방지)
+labels:
+  - pairs:
+      env: dev
+    includeSelectors: false
+    includeTemplates: false
