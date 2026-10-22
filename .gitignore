@@ -7,3 +7,6 @@ _backup_*/
 .env
 credentials*.csv
 *_accessKeys.csv
+
+# envsubst로 치환한 결과물 (계정별 ID 포함)
+*.rendered.yaml

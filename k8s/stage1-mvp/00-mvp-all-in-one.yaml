@@ -137,7 +137,7 @@ spec:
 # 4. Gateway API (외부 접속 -> ALB -> petclinic-web:80)
 #    ※ GatewayClass(alb)는 클러스터 공통 리소스라 gateway/00-gatewayclass.yaml 로 먼저 적용
 #    LoadBalancerConfiguration: scheme 기본값이 internal 이라 internet-facing 명시
-apiVersion: gateway.k8s.aws/v1
+apiVersion: gateway.k8s.aws/v1beta1
 kind: LoadBalancerConfiguration
 metadata:
   name: petclinic-alb-config
@@ -180,7 +180,7 @@ spec:
           port: 80
 ---
 # TargetGroupConfiguration: targetType 기본값이 instance(NodePort 필요)라 ClusterIP Service에 맞게 ip 지정
-apiVersion: gateway.k8s.aws/v1
+apiVersion: gateway.k8s.aws/v1beta1
 kind: TargetGroupConfiguration
 metadata:
   name: petclinic-web-tg

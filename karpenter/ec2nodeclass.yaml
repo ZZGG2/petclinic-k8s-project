@@ -3,9 +3,11 @@ kind: EC2NodeClass
 metadata:
   name: default
 spec:
-  amiFamily: AL2023
-  # eksctl이 생성한 Karpenter 노드 IAM Role 이름 지정 (배포 전 계정/클러스터에 맞게 확인)
-  role: "eksctl-petclinic-eks-nodegroup-ng-system-NodeInstanceRole"
+  # Karpenter v1: amiSelectorTerms 필수 (alias로 최신 AL2023 EKS 최적화 AMI 자동 선택)
+  amiSelectorTerms:
+    - alias: al2023@latest
+  # eksctl karpenter 섹션이 생성한 Karpenter 전용 노드 Role (클러스터 접근 권한 Access Entry 포함)
+  role: "eksctl-KarpenterNodeRole-petclinic-eks"
   subnetSelectorTerms:
     - tags:
         karpenter.sh/discovery: "petclinic-eks"

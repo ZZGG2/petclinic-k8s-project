@@ -1,17 +1,34 @@
+# ==============================================================================
+# eksctl ClusterConfig "템플릿" — ${...} 값은 Bastion에서 envsubst로 치환해 사용
+#   envsubst '${CLUSTER} ${REGION} ${VPC_ID} ${PUB_A} ${PUB_C} ${PRIV_NODE_A} ${PRIV_NODE_C}' \
+#     < eks/00-cluster-config.yaml > eks/cluster.rendered.yaml
+#   (원본은 수정하지 않으므로 git pull 충돌 없음 / *.rendered.yaml 은 .gitignore 대상)
+# ==============================================================================
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: petclinic-eks
-  region: ap-northeast-2
+  name: ${CLUSTER}
+  region: ${REGION}
   version: "1.36"
   tags:
     Project: petclinic-k8s
-    Owner: student
-    karpenter.sh/discovery: petclinic-eks
+    # eksctl이 이 태그를 보고 공유 노드 SG에 karpenter.sh/discovery 태그를 자동으로 붙여줌
+    karpenter.sh/discovery: ${CLUSTER}
+
+# 콘솔에서 만든 기존 VPC/서브넷 사용 (eksctl이 새 VPC를 만들지 않음)
+vpc:
+  id: "${VPC_ID}"
+  subnets:
+    public:
+      ap-northeast-2a: { id: "${PUB_A}" }
+      ap-northeast-2c: { id: "${PUB_C}" }
+    private:
+      ap-northeast-2a: { id: "${PRIV_NODE_A}" }
+      ap-northeast-2c: { id: "${PRIV_NODE_C}" }
 
 iam:
-  withOIDC: true
+  withOIDC: true   # IRSA(LBC) 및 Karpenter 설치에 필요
 
 addonsConfig:
   autoApplyPodIdentityAssociations: true
@@ -19,7 +36,8 @@ addonsConfig:
 autoModeConfig:
   enabled: false
 
-# Karpenter 컨트롤러용 IAM Role, Spot 중단 대응 SQS 큐 및 EventBridge 규칙 자동 생성
+# Karpenter "설치만" 해 둠 (IAM Role, SQS 큐, 컨트롤러 Helm 설치)
+# NodePool/EC2NodeClass를 적용하기 전까지는 노드를 하나도 만들지 않음 → Stage 4에서 활성화
 karpenter:
   version: "1.14.2"   # Karpenter 1.14.x = K8s 1.29~1.36 지원
   createServiceAccount: true
@@ -41,12 +59,13 @@ managedNodeGroups:
     maxSize: 3
     volumeSize: 20
     privateNetworking: true
+    subnets:
+      - "${PRIV_NODE_A}"
+      - "${PRIV_NODE_C}"
     labels:
       role: system
-    taints:
-      - key: CriticalAddonsOnly
-        value: "true"
-        effect: NoSchedule
+    # [Stage 1~3] Taint 없음 → 앱 파드(WEB/WAS/DB)도 이 노드에서 실행
+    # [Stage 4] CriticalAddonsOnly=true:NoSchedule Taint를 추가해 앱 파드를 Karpenter 노드로 이동
     tags:
       Project: petclinic-k8s
       NodeGroupRole: system

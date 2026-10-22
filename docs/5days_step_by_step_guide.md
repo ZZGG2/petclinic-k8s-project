@@ -213,117 +213,59 @@ git checkout ./docker/web/index.html 2>/dev/null || true
 
 ---
 
-### Step 1-5. EKS 클러스터 생성 및 기본 노드풀 · ALB Controller 준비
+### Step 1-5. EKS 클러스터 생성 · AWS Load Balancer Controller(Gateway API) 준비
 > 📍 **실행 위치**: 🐧 **`[Bastion EC2 셸]`** (`~/petclinic-k8s-project`)
 
+> **Stage 1 설계 결정**: `ng-system` 노드그룹은 **Taint 없이** 생성해 앱 파드도 함께 실행합니다. Karpenter는 eksctl로 **설치만** 해 두고(IAM·SQS·컨트롤러), `NodePool`/`EC2NodeClass` 적용과 `ng-system` Taint 추가는 **Stage 4**에서 진행합니다.
+
 ```bash
-# 1) Step 1-1에서 생성한 VPC/서브넷 ID를 반영하여 EKS 클러스터 생성 (약 15~20분 소요)
-cat > eks/00-cluster-config.yaml <<EOF
-apiVersion: eksctl.io/v1alpha5
-kind: ClusterConfig
+# 1) 클러스터 설정 템플릿 치환 → 렌더링 파일 생성 (원본은 수정하지 않음 → git pull 충돌 방지)
+sudo apt-get install -y gettext-base   # envsubst
+envsubst '${CLUSTER} ${REGION} ${VPC_ID} ${PUB_A} ${PUB_C} ${PRIV_NODE_A} ${PRIV_NODE_C}' \
+  < eks/00-cluster-config.yaml > eks/cluster.rendered.yaml
+grep -nE "vpc-|subnet-|name: petclinic" eks/cluster.rendered.yaml   # 치환 결과 확인
 
-metadata:
-  name: ${CLUSTER}
-  region: ${REGION}
-  version: "1.36"
-  tags:
-    Project: petclinic-k8s
-    karpenter.sh/discovery: ${CLUSTER}
+# 2) 사전 검증(dry-run) 후 클러스터 생성 (약 15~20분)
+eksctl create cluster -f eks/cluster.rendered.yaml --dry-run > /dev/null && echo "config OK"
+eksctl create cluster -f eks/cluster.rendered.yaml
 
-vpc:
-  id: "${VPC_ID}"
-  subnets:
-    public:
-      ap-northeast-2a: { id: "${PUB_A}" }
-      ap-northeast-2c: { id: "${PUB_C}" }
-    private:
-      ap-northeast-2a: { id: "${PRIV_NODE_A}" }
-      ap-northeast-2c: { id: "${PRIV_NODE_C}" }
+kubectl get nodes -L role          # ng-system 노드 2개 Ready
+kubectl get pods -n kube-system    # coredns, aws-node, ebs-csi, metrics-server, karpenter 등 Running
 
-iam:
-  withOIDC: true
+# 3) AWS Load Balancer Controller (Gateway API) 설치
+#    ⚠️ 순서 중요: LBC는 "기동 시점"에 Gateway API CRD 존재 여부를 보고 Gateway 컨트롤러를 켬
+LBC_VERSION="v3.4.1"; LBC_CHART_VERSION="3.4.0"   # 차트 3.4.0 = 앱 v3.4.1
 
-addonsConfig:
-  autoApplyPodIdentityAssociations: true
-
-autoModeConfig:
-  enabled: false
-
-karpenter:
-  version: "1.14.2"   # Karpenter 1.14.x = K8s 1.29~1.36 지원 (1.3.x는 1.32까지만 지원)
-  createServiceAccount: true
-  withSpotInterruptionQueue: true
-
-addons:
-  - name: vpc-cni
-  - name: coredns
-  - name: kube-proxy
-  - name: eks-pod-identity-agent
-  - name: aws-ebs-csi-driver
-  - name: metrics-server
-
-managedNodeGroups:
-  - name: ng-system
-    instanceType: m7i-flex.large
-    desiredCapacity: 2
-    minSize: 2
-    maxSize: 3
-    volumeSize: 20
-    privateNetworking: true
-    subnets:
-      - "${PRIV_NODE_A}"
-      - "${PRIV_NODE_C}"
-    labels:
-      role: system
-    taints:
-      - key: CriticalAddonsOnly
-        value: "true"
-        effect: NoSchedule
-EOF
-
-eksctl create cluster -f eks/00-cluster-config.yaml
-aws eks update-kubeconfig --name "$CLUSTER" --region "$REGION"
-
-# 2) 앱 파드가 스케줄링될 수 있도록 Karpenter 기본 NodePool 등록
-NODE_SG=$(aws eks describe-cluster --name "$CLUSTER" --query 'cluster.resourcesVpcConfig.clusterSecurityGroupId' --output text)
-aws ec2 create-tags --resources "$NODE_SG" --tags Key=karpenter.sh/discovery,Value="$CLUSTER"
-NODE_ROLE_NAME=$(aws iam list-roles --query "Roles[?contains(RoleName, 'eksctl-${CLUSTER}-nodegroup-ng-system-NodeInstanceRole')].RoleName" --output text)
-sed -i "s|role:.*|role: \"${NODE_ROLE_NAME}\"|" karpenter/ec2nodeclass.yaml
-kubectl apply -f karpenter/ec2nodeclass.yaml
-kubectl apply -f karpenter/nodepool.yaml
-
-# 3) 외부 접속(Gateway API -> ALB)을 위한 AWS Load Balancer Controller 설치
-#    ⚠️ 순서 중요: LBC는 "기동 시점"에 Gateway API CRD 존재 여부를 보고 Gateway 컨트롤러를 켭니다.
-#       → CRD를 먼저 설치하고 LBC를 설치해야 합니다. (순서가 바뀌면 LBC 재시작 필요)
-LBC_VERSION="v3.4.1"
-
-# 3-1) Gateway API 표준 CRD (GatewayClass, Gateway, HTTPRoute 등)
+# 3-1) Gateway API 표준 CRD (GatewayClass, Gateway, HTTPRoute ...)
 kubectl apply --server-side=true -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.0/standard-install.yaml
 
-# 3-2) LBC 전용 Gateway CRD (LoadBalancerConfiguration, TargetGroupConfiguration, ListenerRuleConfiguration)
+# 3-2) LBC 전용 CRD (LoadBalancerConfiguration, TargetGroupConfiguration, ListenerRuleConfiguration / v1beta1)
 kubectl apply -f "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/${LBC_VERSION}/config/crd/gateway/gateway-crds.yaml"
 kubectl get crd | grep -E "gateway.networking.k8s.io|gateway.k8s.aws"
 
-# 3-3) IAM 정책 (설치할 LBC 버전과 같은 버전의 정책 사용)
+# 3-3) IAM 정책 + IRSA ServiceAccount
 curl -sSLo /tmp/iam-policy.json "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/${LBC_VERSION}/docs/install/iam_policy.json"
 POLICY_ARN=$(aws iam create-policy --policy-name AWSLoadBalancerControllerIAMPolicy-PetClinic \
   --policy-document file:///tmp/iam-policy.json --query 'Policy.Arn' --output text 2>/dev/null || \
   aws iam list-policies --query "Policies[?PolicyName=='AWSLoadBalancerControllerIAMPolicy-PetClinic'].Arn" --output text)
+echo "$POLICY_ARN"
 
 eksctl create iamserviceaccount --cluster="$CLUSTER" --namespace=kube-system \
   --name=aws-load-balancer-controller --attach-policy-arn="$POLICY_ARN" \
   --override-existing-serviceaccounts --approve
 
-# 3-4) LBC Helm 설치 (ng-system Taint 허용)
+# 3-4) LBC Helm 설치 (Stage 4 Taint 대비 toleration 미리 부여)
 helm repo add eks https://aws.github.io/eks-charts && helm repo update
 helm upgrade -i aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system \
+  --version "$LBC_CHART_VERSION" \
   --set clusterName="$CLUSTER" --set serviceAccount.create=false \
   --set serviceAccount.name=aws-load-balancer-controller --set region="$REGION" --set vpcId="$VPC_ID" \
-  --set tolerations[0].key=CriticalAddonsOnly --set tolerations[0].operator=Exists --set tolerations[0].effect=NoSchedule --wait
+  --set 'tolerations[0].key=CriticalAddonsOnly' --set 'tolerations[0].operator=Exists' --set 'tolerations[0].effect=NoSchedule' --wait
+kubectl get deploy aws-load-balancer-controller -n kube-system   # READY 2/2
 
-# 3-5) GatewayClass(alb) 등록 — 클러스터 공통 리소스라 1회만 적용
+# 3-5) GatewayClass(alb) 등록 — 클러스터 공통 리소스, 1회만 적용
 kubectl apply -f gateway/00-gatewayclass.yaml
-kubectl get gatewayclass alb   # ACCEPTED=True 확인
+kubectl get gatewayclass alb   # ACCEPTED=True
 ```
 
 ---
@@ -599,6 +541,17 @@ kubectl get scaledobject,hpa -n petclinic
 > 📍 **실행 위치**: 🐧 **`[Bastion EC2 셸]`**
 
 ```bash
+# 0) [Stage 4 활성화] EC2NodeClass / NodePool 적용 → ng-system에 Taint 추가 → 앱 파드를 Karpenter 노드로 이동
+kubectl apply -f karpenter/ec2nodeclass.yaml
+kubectl get ec2nodeclass default    # READY=True (서브넷/SG/AMI/Role 탐색 성공)
+kubectl apply -f karpenter/nodepool.yaml
+
+aws eks update-nodegroup-config --cluster-name "$CLUSTER" --nodegroup-name ng-system \
+  --taints 'addOrUpdateTaints=[{key=CriticalAddonsOnly,value=true,effect=NO_SCHEDULE}]'
+# NoSchedule은 "새 파드"만 막으므로, 기존 앱 파드는 재시작해서 Karpenter 노드로 옮김
+kubectl rollout restart deploy -n petclinic
+kubectl get nodeclaims -w           # Karpenter가 새 노드를 만드는 과정 관찰
+
 # 1) Karpenter NodePool의 클러스터 상한(limits.cpu: 16) 및 Consolidation 설정 확인
 kubectl describe nodepool default
 

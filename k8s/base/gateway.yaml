@@ -6,7 +6,7 @@
 
 # 1) LoadBalancerConfiguration — ALB 자체 설정 (기존 alb.ingress.kubernetes.io/scheme, tags 어노테이션 대체)
 #    ⚠️ scheme 기본값은 internal 이므로 외부 접속을 위해 internet-facing 명시 필수
-apiVersion: gateway.k8s.aws/v1
+apiVersion: gateway.k8s.aws/v1beta1
 kind: LoadBalancerConfiguration
 metadata:
   name: petclinic-alb-config
@@ -59,7 +59,7 @@ spec:
 ---
 # 4) TargetGroupConfiguration — 대상 그룹 설정 (기존 target-type, healthcheck-path 어노테이션 대체)
 #    ⚠️ targetType 기본값은 instance 이므로 Pod IP 직행을 위해 ip 명시
-apiVersion: gateway.k8s.aws/v1
+apiVersion: gateway.k8s.aws/v1beta1
 kind: TargetGroupConfiguration
 metadata:
   name: petclinic-web-tg
