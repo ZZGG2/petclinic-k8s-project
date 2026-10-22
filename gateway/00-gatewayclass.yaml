@@ -1,0 +1,13 @@
+# ==============================================================================
+# GatewayClass — "어떤 컨트롤러가 이 Gateway를 구현하는가?" (클러스터 범위 리소스)
+# - Ingress의 ingressClassName: alb 에 해당
+# - AWS Load Balancer Controller(v2.14+)의 ALB(L7) 구현체를 지정
+# - 네임스페이스가 없는 클러스터 리소스이므로 Kustomize(namespace: petclinic) 밖에서
+#   LBC 설치 직후 1회만 적용합니다. (인프라 담당자 역할)
+# ==============================================================================
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: alb
+spec:
+  controllerName: gateway.k8s.aws/alb

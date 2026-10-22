@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: petclinic-report
+  namespace: petclinic
+spec:
+  schedule: "*/5 * * * *"
+  timeZone: "Asia/Seoul"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: petclinic
+            tier: report
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: report
+              image: mysql:8.4
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              envFrom:
+                - configMapRef:
+                    name: petclinic-config
+              env:
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: petclinic-db-secret
+                      key: DB_PASSWORD
+              command:
+                - sh
+                - -c
+                - |
+                  set -e
+                  printf '[client]\npassword="%s"\n' "$DB_PASSWORD" > /tmp/my.cnf
+                  OWNERS=$(mysql --defaults-extra-file=/tmp/my.cnf -N -h "$DB_HOST" -u "$DB_USER" "$DB_NAME" -e 'SELECT COUNT(*) FROM owners')
+                  PETS=$(mysql --defaults-extra-file=/tmp/my.cnf -N -h "$DB_HOST" -u "$DB_USER" "$DB_NAME" -e 'SELECT COUNT(*) FROM pets')
+                  VISITS=$(mysql --defaults-extra-file=/tmp/my.cnf -N -h "$DB_HOST" -u "$DB_USER" "$DB_NAME" -e 'SELECT COUNT(*) FROM visits')
+                  echo "$(date +%Y-%m-%dT%H:%M:%S) [PetClinic Report] owners=${OWNERS} pets=${PETS} visits=${VISITS}"

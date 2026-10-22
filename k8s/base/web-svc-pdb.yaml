@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: petclinic-web
+  namespace: petclinic
+  labels:
+    app: petclinic
+    tier: web
+spec:
+  type: ClusterIP
+  selector:
+    app: petclinic
+    tier: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: petclinic-web-pdb
+  namespace: petclinic
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: petclinic
+      tier: web

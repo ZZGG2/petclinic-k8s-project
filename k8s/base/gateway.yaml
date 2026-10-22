@@ -1,0 +1,76 @@
+# ==============================================================================
+# Gateway API (AWS Load Balancer Controller → ALB)
+#   GatewayClass(alb, 클러스터 공통) → Gateway(ALB 1개 + 리스너) → HTTPRoute(경로 규칙) → Service
+#   ※ Ingress 하나에 몰려 있던 설정(annotations)이 역할별 리소스로 분리됩니다.
+# ==============================================================================
+
+# 1) LoadBalancerConfiguration — ALB 자체 설정 (기존 alb.ingress.kubernetes.io/scheme, tags 어노테이션 대체)
+#    ⚠️ scheme 기본값은 internal 이므로 외부 접속을 위해 internet-facing 명시 필수
+apiVersion: gateway.k8s.aws/v1
+kind: LoadBalancerConfiguration
+metadata:
+  name: petclinic-alb-config
+  namespace: petclinic
+spec:
+  scheme: internet-facing
+  tags:
+    Project: petclinic-k8s
+---
+# 2) Gateway — 실제 ALB 1개 + HTTP:80 리스너 (기존 listen-ports 어노테이션 대체)
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: petclinic-gateway
+  namespace: petclinic
+spec:
+  gatewayClassName: alb
+  infrastructure:
+    parametersRef:
+      group: gateway.k8s.aws
+      kind: LoadBalancerConfiguration
+      name: petclinic-alb-config
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+# 3) HTTPRoute — 라우팅 규칙 (기존 Ingress spec.rules 대체)
+#    모든 외부 트래픽은 WEB(Nginx)으로 진입하고, /petclinic/ 경로는 Nginx가 WAS로 프록시
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: petclinic-route
+  namespace: petclinic
+spec:
+  parentRefs:
+    - name: petclinic-gateway
+      sectionName: http
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: petclinic-web
+          port: 80
+---
+# 4) TargetGroupConfiguration — 대상 그룹 설정 (기존 target-type, healthcheck-path 어노테이션 대체)
+#    ⚠️ targetType 기본값은 instance 이므로 Pod IP 직행을 위해 ip 명시
+apiVersion: gateway.k8s.aws/v1
+kind: TargetGroupConfiguration
+metadata:
+  name: petclinic-web-tg
+  namespace: petclinic
+spec:
+  targetReference:
+    name: petclinic-web
+  defaultConfiguration:
+    targetType: ip
+    healthCheckConfig:
+      healthCheckPath: /healthz
+      healthCheckProtocol: HTTP
+      matcher:
+        httpCode: "200"

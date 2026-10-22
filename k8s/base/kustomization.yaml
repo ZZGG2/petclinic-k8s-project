@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: petclinic
+
+resources:
+  - namespace.yaml
+  - limit-quota.yaml
+  - config-secret.yaml
+  - db-seed-sql-cm.yaml
+  - db-report-cronjob.yaml
+  - was-deployment.yaml
+  - was-svc-hpa-pdb.yaml
+  - web-deployment.yaml
+  - web-svc-pdb.yaml
+  - gateway.yaml

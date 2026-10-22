@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: petclinic-limits
+  namespace: petclinic
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 50m
+        memory: 64Mi
+      default:
+        cpu: 200m
+        memory: 256Mi
+      max:
+        cpu: "1"
+        memory: 2Gi
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: petclinic-quota
+  namespace: petclinic
+spec:
+  hard:
+    # WAS(HPA max 4 + surge 1 = 5) + WEB(KEDA max 4 + surge 1 = 5) + DB(dev 1) + Job(1) 수용
+    requests.cpu: "3"
+    requests.memory: 5Gi
+    limits.cpu: "8"
+    limits.memory: 10Gi
+    pods: "20"

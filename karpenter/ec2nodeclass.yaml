@@ -1,0 +1,23 @@
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiFamily: AL2023
+  # eksctl이 생성한 Karpenter 노드 IAM Role 이름 지정 (배포 전 계정/클러스터에 맞게 확인)
+  role: "eksctl-petclinic-eks-nodegroup-ng-system-NodeInstanceRole"
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "petclinic-eks"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "petclinic-eks"
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        volumeSize: 20Gi
+        volumeType: gp3
+        deleteOnTermination: true
+  tags:
+    Project: petclinic-k8s
+    ManagedBy: karpenter
