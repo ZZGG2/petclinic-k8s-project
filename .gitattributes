@@ -1,0 +1,7 @@
+# Windows에서 커밋해도 리눅스(Bastion)용 파일은 항상 LF 유지
+* text=auto
+*.sh text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.conf text eol=lf
+Dockerfile text eol=lf

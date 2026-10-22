@@ -1,0 +1,9 @@
+# 로컬 백업 폴더
+_backup_*/
+
+# SSH 키 / 자격 증명 (절대 커밋 금지)
+*.pem
+*.key
+.env
+credentials*.csv
+*_accessKeys.csv
