@@ -4,7 +4,7 @@
 #  - [Stage 3-1] liveness / readiness Probe 추가 (/healthz: Nginx가 직접 응답)
 #  - [Stage 3-2] resources(requests/limits) 추가
 #  - [Stage 3-3] replicas 2 + 무중단 롤링 전략 + AZ/노드 분산 (PDB는 pdb.yaml)
-#  - Sidecar 는 Stage 3-4 에서 추가 (k8s/_next 참고)
+#  - [Stage 3-4] 네이티브 Sidecar(log-agent): emptyDir 공유 볼륨으로 Nginx 접속 로그 스트리밍
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -48,12 +48,35 @@ spec:
             matchLabels:
               app: petclinic
               tier: web
+      # [Stage 3-4] 네이티브 Sidecar = initContainers + restartPolicy: Always (K8s 1.29+)
+      #  - 일반 init 컨테이너와 달리 "끝나지 않고" 메인 컨테이너와 함께 계속 실행
+      #  - 메인 컨테이너보다 먼저 시작, 파드 종료 시 메인 컨테이너가 끝난 뒤에 종료
+      initContainers:
+        - name: log-agent
+          image: busybox:1.37
+          restartPolicy: Always
+          command: ["sh", "-c", "touch /var/log/nginx/access.log; exec tail -F /var/log/nginx/access.log"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: logs
+              mountPath: /var/log/nginx
       containers:
         - name: nginx
           image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-web:v1"
           ports:
             - name: http
               containerPort: 80
+          # nginx 이미지는 원래 access.log → /dev/stdout 심볼릭 링크
+          # emptyDir을 /var/log/nginx 에 덮어 마운트하면 링크가 가려져 "실제 파일"로 기록됨 → Sidecar가 읽음
+          volumeMounts:
+            - name: logs
+              mountPath: /var/log/nginx
           resources:
             requests:
               cpu: 50m
@@ -73,3 +96,7 @@ spec:
               path: /healthz
               port: http
             periodSeconds: 5
+      volumes:
+        # 파드 안 컨테이너끼리 공유하는 임시 디스크 (파드가 삭제되면 같이 사라짐)
+        - name: logs
+          emptyDir: {}
