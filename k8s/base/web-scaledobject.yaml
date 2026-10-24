@@ -1,0 +1,62 @@
+# ==============================================================================
+# [Stage 4-2] WEB KEDA ScaledObject — "이벤트(외부 지표) 기반" 오토스케일링
+#  - KEDA가 이 ScaledObject를 보고 HPA(keda-hpa-petclinic-web-scaledobject)를 대신 만들어 관리
+#  - 트리거 2개 중 "더 많은 파드를 요구하는 쪽"을 따름 (OR 조건)
+#    ① aws-cloudwatch: ALB 대상 그룹의 분당 요청 수 → 파드 1개당 60건/분 (= 약 1 rps)
+#    ② cron: 평일 09:00~18:00(KST) 동안 최소 3개 유지 (예측 가능한 트래픽 대비)
+#  - ${ALB_DIM}, ${TG_DIM}: Gateway가 만든 ALB/대상 그룹 이름 → 적용 시 envsubst로 치환
+#  - 전제: KEDA 설치(Helm) + keda-operator에 Pod Identity로 CloudWatch 읽기 권한
+# ==============================================================================
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: petclinic-aws-auth
+  namespace: petclinic
+spec:
+  podIdentity:
+    provider: aws          # identityOwner 기본값 keda → keda-operator 자신의 AWS 권한(Pod Identity) 사용
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: petclinic-web-scaledobject
+  namespace: petclinic
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: petclinic-web
+  pollingInterval: 30        # 30초마다 지표 조회
+  cooldownPeriod: 60         # (0으로 줄일 때만 사용 — min이 2라 여기선 영향 거의 없음)
+  minReplicaCount: 2
+  maxReplicaCount: 4
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 120   # CloudWatch 지표가 들쭉날쭉하므로 HPA보다 길게
+  triggers:
+    # ① ALB 요청 수 (CloudWatch: AWS/ApplicationELB · RequestCount · Sum)
+    #   desired = ceil( 분당 총 요청 수 ÷ 60 )  (metricType 기본값 AverageValue = "파드 1개당 목표값")
+    - type: aws-cloudwatch
+      authenticationRef:
+        name: petclinic-aws-auth
+      metadata:
+        awsRegion: ap-northeast-2
+        namespace: AWS/ApplicationELB
+        metricName: RequestCount
+        dimensionName: LoadBalancer;TargetGroup
+        dimensionValue: "${ALB_DIM};${TG_DIM}"
+        metricStat: Sum
+        metricStatPeriod: "60"       # 1분 단위 합계
+        metricCollectionTime: "180"  # 최근 3분 조회
+        metricEndTimeOffset: "60"    # 아직 집계 중인 "최근 1분"은 제외 (CloudWatch 지연 대응)
+        targetMetricValue: "60"      # 파드 1개당 분당 60건
+        minMetricValue: "0"          # 지표가 없으면(트래픽 0) 0으로 간주
+    # ② 업무 시간 최소 3개
+    - type: cron
+      metadata:
+        timezone: Asia/Seoul
+        start: 0 9 * * 1-5
+        end: 0 18 * * 1-5
+        desiredReplicas: "3"

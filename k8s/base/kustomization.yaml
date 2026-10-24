@@ -2,6 +2,7 @@
 # base — dev / prod 공통 리소스 (DB를 제외한 전부)
 #  ※ 이미지 주소의 ${AWS_ACCOUNT_ID} 는 Kustomize가 치환하지 않음 → 적용 시 envsubst 파이프 사용
 #    kubectl kustomize k8s/overlays/dev | envsubst '${AWS_ACCOUNT_ID}' | kubectl apply -f -
+#    (Stage 4-2 이후: ~/petclinic-env.sh 의 kapply / kdiff 함수 사용 — ALB_DIM, TG_DIM, RDS_ENDPOINT 포함)
 # ==============================================================================
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -23,6 +24,7 @@ resources:
   # WEB
   - web-deployment.yaml
   - web-service.yaml
+  - web-scaledobject.yaml       # [Stage 4-2] KEDA (ALB 요청 수 + cron) — KEDA CRD 설치 필요
   # 가용성
   - pdb.yaml                    # [Stage 3-3] WAS/WEB PodDisruptionBudget
   # 외부 노출 (Gateway API → ALB)

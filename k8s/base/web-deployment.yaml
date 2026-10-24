@@ -4,6 +4,7 @@
 #  - [Stage 3-1] liveness / readiness Probe 추가 (/healthz: Nginx가 직접 응답)
 #  - [Stage 3-2] resources(requests/limits) 추가
 #  - [Stage 3-3] replicas 2 + 무중단 롤링 전략 + AZ/노드 분산 (PDB는 pdb.yaml)
+#  - [Stage 4-2] 파드 수는 KEDA가 관리 (ALB 요청 수 + 평일 업무시간 cron)
 #  - [Stage 3-4] 네이티브 Sidecar(log-agent): emptyDir 공유 볼륨으로 Nginx 접속 로그 스트리밍
 # ==============================================================================
 apiVersion: apps/v1
@@ -12,7 +13,7 @@ metadata:
   name: petclinic-web
   namespace: petclinic
 spec:
-  replicas: 2                 # [Stage 3-3] 1 → 2 (한 개가 죽어도 서비스 유지)
+  # [Stage 4-2] replicas 는 KEDA(web-scaledobject.yaml)가 만든 HPA가 관리 → 매니페스트에서 제거
   # 롤링 업데이트 중에도 "준비된 파드 수"가 replicas 아래로 떨어지지 않게
   strategy:
     type: RollingUpdate
