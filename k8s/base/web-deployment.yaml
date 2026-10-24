@@ -2,7 +2,8 @@
 # WEB (Nginx: / 정적 서빙 + /petclinic/ → petclinic-was:8080 프록시) — Stage 2 버전
 #  - 설정(default.conf)은 이미지에 포함
 #  - [Stage 3-1] liveness / readiness Probe 추가 (/healthz: Nginx가 직접 응답)
-#  - Sidecar / resources / topologySpread 는 Stage 3 후반에 추가 (k8s/_next 참고)
+#  - [Stage 3-2] resources(requests/limits) 추가
+#  - Sidecar / topologySpread 는 Stage 3 후반에 추가 (k8s/_next 참고)
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -28,6 +29,13 @@ spec:
           ports:
             - name: http
               containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
           # Nginx는 기동이 빨라서 startupProbe 불필요
           # /healthz 는 WAS로 프록시하지 않음 → WAS 장애가 WEB 재시작으로 번지지 않음
           livenessProbe:

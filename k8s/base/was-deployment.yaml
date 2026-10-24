@@ -3,7 +3,8 @@
 #  - DB 접속 정보: Secret(petclinic-was-dbconfig) → data-access.properties 파일 1개만 subPath로 교체
 #  - 자동 초기화 OFF: ConfigMap(petclinic-config)의 empty.sql 을 /config 에 마운트
 #  - [Stage 3-1] 3종 Probe 추가 (startup / liveness / readiness)
-#  - resources / topologySpread 는 Stage 3 후반, HPA 는 Stage 4 에서 추가
+#  - [Stage 3-2] resources(requests/limits) + JVM 힙 비율 설정
+#  - topologySpread 는 Stage 3-3, HPA 는 Stage 4 에서 추가
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -29,6 +30,20 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+          # requests: 스케줄러가 "이만큼 비어 있는 노드"를 찾는 기준 (보장량)
+          # limits  : 넘으면 CPU는 스로틀링, 메모리는 OOMKilled
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 800m
+              memory: 1Gi
+          env:
+            # JVM은 컨테이너 메모리 limit을 인식해 기본적으로 25%(=256Mi)만 힙으로 씀
+            # → 75%(=768Mi)까지 힙으로 쓰도록 지정 (나머지는 메타스페이스/스레드 등 비힙 영역)
+            - name: JDK_JAVA_OPTIONS
+              value: "-XX:MaxRAMPercentage=75.0"
           # ── Probe 3종: "무엇을 확인하느냐"가 서로 다름 ──────────────────────────
           # ① startupProbe: 기동 완료(Spring 컨텍스트 로딩)까지 기다려 줌
           #    통과 전에는 liveness/readiness를 실행하지 않음 → 느린 기동 중 재시작 방지
