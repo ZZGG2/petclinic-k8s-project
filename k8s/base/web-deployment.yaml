@@ -3,7 +3,8 @@
 #  - 설정(default.conf)은 이미지에 포함
 #  - [Stage 3-1] liveness / readiness Probe 추가 (/healthz: Nginx가 직접 응답)
 #  - [Stage 3-2] resources(requests/limits) 추가
-#  - Sidecar / topologySpread 는 Stage 3 후반에 추가 (k8s/_next 참고)
+#  - [Stage 3-3] replicas 2 + 무중단 롤링 전략 + AZ/노드 분산 (PDB는 pdb.yaml)
+#  - Sidecar 는 Stage 3-4 에서 추가 (k8s/_next 참고)
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -11,7 +12,13 @@ metadata:
   name: petclinic-web
   namespace: petclinic
 spec:
-  replicas: 1
+  replicas: 2                 # [Stage 3-3] 1 → 2 (한 개가 죽어도 서비스 유지)
+  # 롤링 업데이트 중에도 "준비된 파드 수"가 replicas 아래로 떨어지지 않게
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1             # 새 파드를 1개 먼저 띄우고
+      maxUnavailable: 0       # 새 파드가 Ready 된 뒤에야 옛 파드를 내림
   selector:
     matchLabels:
       app: petclinic
@@ -23,6 +30,24 @@ spec:
         tier: web
         version: v1
     spec:
+      # [Stage 3-3] 파드를 AZ / 노드에 고르게 분산 (스케줄링 시점에만 적용, 이미 뜬 파드는 재배치 안 함)
+      #  maxSkew 1: 가장 많은 곳과 가장 적은 곳의 파드 수 차이가 1을 넘지 않게
+      #  ScheduleAnyway: 조건을 못 지켜도 일단 배치 (DoNotSchedule 이면 Pending)
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: petclinic
+              tier: web
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: petclinic
+              tier: web
       containers:
         - name: nginx
           image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-web:v1"

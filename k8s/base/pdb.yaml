@@ -1,0 +1,29 @@
+# ==============================================================================
+# PodDisruptionBudget — "자발적 중단" 때 최소 몇 개는 살아 있어야 하는가
+#  - 자발적 중단: kubectl drain, 노드 업그레이드, Karpenter 노드 정리(Consolidation) 등
+#  - 비자발적 중단(노드 장애, OOM)은 막지 못함 → 그건 replicas + 분산 배치로 대비
+#  - minAvailable: 1 → 2개 중 동시에 1개까지만 내보낼 수 있음
+# ==============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: petclinic-was-pdb
+  namespace: petclinic
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: petclinic
+      tier: was
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: petclinic-web-pdb
+  namespace: petclinic
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: petclinic
+      tier: web

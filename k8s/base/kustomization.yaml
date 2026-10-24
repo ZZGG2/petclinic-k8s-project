@@ -21,5 +21,7 @@ resources:
   # WEB
   - web-deployment.yaml
   - web-service.yaml
+  # 가용성
+  - pdb.yaml                    # [Stage 3-3] WAS/WEB PodDisruptionBudget
   # 외부 노출 (Gateway API → ALB)
   - gateway.yaml

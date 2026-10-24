@@ -4,7 +4,8 @@
 #  - 자동 초기화 OFF: ConfigMap(petclinic-config)의 empty.sql 을 /config 에 마운트
 #  - [Stage 3-1] 3종 Probe 추가 (startup / liveness / readiness)
 #  - [Stage 3-2] resources(requests/limits) + JVM 힙 비율 설정
-#  - topologySpread 는 Stage 3-3, HPA 는 Stage 4 에서 추가
+#  - [Stage 3-3] replicas 2 + 무중단 롤링 전략 + AZ/노드 분산 (PDB는 pdb.yaml)
+#  - HPA 는 Stage 4 에서 추가
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -12,7 +13,13 @@ metadata:
   name: petclinic-was
   namespace: petclinic
 spec:
-  replicas: 1
+  replicas: 2                 # [Stage 3-3] 1 → 2 (한 개가 죽어도 서비스 유지)
+  # 롤링 업데이트 중에도 "준비된 파드 수"가 replicas 아래로 떨어지지 않게
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1             # 새 파드를 1개 먼저 띄우고
+      maxUnavailable: 0       # 새 파드가 Ready 된 뒤에야 옛 파드를 내림
   selector:
     matchLabels:          # 생성 후 변경 불가 → app, tier 만 사용
       app: petclinic
@@ -24,6 +31,24 @@ spec:
         tier: was
         version: v1       # 템플릿에만 붙이는 라벨 (selector에는 넣지 않음)
     spec:
+      # [Stage 3-3] 파드를 AZ / 노드에 고르게 분산 (스케줄링 시점에만 적용, 이미 뜬 파드는 재배치 안 함)
+      #  maxSkew 1: 가장 많은 곳과 가장 적은 곳의 파드 수 차이가 1을 넘지 않게
+      #  ScheduleAnyway: 조건을 못 지켜도 일단 배치 (DoNotSchedule 이면 Pending)
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: petclinic
+              tier: was
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: petclinic
+              tier: was
       containers:
         - name: tomcat
           image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-was:v1.2"
