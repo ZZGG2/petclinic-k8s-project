@@ -15,6 +15,7 @@ resources:
   - config-secret.yaml          # ConfigMap(petclinic-config, empty.sql) + Secret(petclinic-db-secret)
   - was-dbconfig-secret.yaml    # WAS data-access.properties
   - db-seed-sql-cm.yaml         # Seed Job이 실행할 스키마/데이터 SQL
+  - db-report-cronjob.yaml      # [Stage 3-5] 5분마다 DB 현황 집계
   # WAS
   - was-deployment.yaml
   - was-service.yaml

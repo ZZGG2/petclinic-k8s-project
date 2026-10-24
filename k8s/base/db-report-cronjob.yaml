@@ -1,17 +1,24 @@
+# ==============================================================================
+# [Stage 3-5] DB 현황 리포트 CronJob — 5분마다 owners / pets / visits 개수 집계
+#  - 앱 계정(petclinic, DML 전용)으로 SELECT만 수행 → 최소 권한 그대로 활용
+#  - DB_HOST=petclinic-db → dev(StatefulSet) / prod(RDS) 어디서든 수정 없이 동작
+# ==============================================================================
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: petclinic-report
   namespace: petclinic
 spec:
-  schedule: "*/5 * * * *"
-  timeZone: "Asia/Seoul"
-  concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 3
+  schedule: "*/5 * * * *"          # 분 시 일 월 요일 → 5분마다
+  timeZone: "Asia/Seoul"            # 기본은 UTC(컨트롤 플레인 기준) → 한국 시간 기준으로 해석
+  concurrencyPolicy: Forbid         # 이전 실행이 아직 안 끝났으면 이번 실행은 건너뜀 (중복 실행 방지)
+  startingDeadlineSeconds: 120      # 예정 시각에서 2분 넘게 못 시작했으면 그 회차는 포기
+  successfulJobsHistoryLimit: 3     # 성공한 Job은 최근 3개만 남김 (로그 확인용)
   failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
-      backoffLimit: 2
+      backoffLimit: 2               # 실패 시 최대 2번 재시도
+      activeDeadlineSeconds: 120    # 2분 넘게 걸리면 강제 종료 (이미지 pull 시간 포함 / DB 응답 없이 멈춘 경우 대비)
       template:
         metadata:
           labels:
