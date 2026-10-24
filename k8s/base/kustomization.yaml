@@ -19,6 +19,7 @@ resources:
   # WAS
   - was-deployment.yaml
   - was-service.yaml
+  - was-hpa.yaml                # [Stage 4-1] CPU 기반 오토스케일링
   # WEB
   - web-deployment.yaml
   - web-service.yaml

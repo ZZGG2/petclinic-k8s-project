@@ -5,7 +5,7 @@
 #  - [Stage 3-1] 3종 Probe 추가 (startup / liveness / readiness)
 #  - [Stage 3-2] resources(requests/limits) + JVM 힙 비율 설정
 #  - [Stage 3-3] replicas 2 + 무중단 롤링 전략 + AZ/노드 분산 (PDB는 pdb.yaml)
-#  - HPA 는 Stage 4 에서 추가
+#  - [Stage 4-1] 파드 수는 HPA가 관리 (min 2 / max 4, CPU 50%)
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -13,7 +13,8 @@ metadata:
   name: petclinic-was
   namespace: petclinic
 spec:
-  replicas: 2                 # [Stage 3-3] 1 → 2 (한 개가 죽어도 서비스 유지)
+  # [Stage 4-1] replicas 는 HPA(was-hpa.yaml)가 관리 → 매니페스트에서 제거
+  #  (남겨두면 apply 할 때마다 HPA가 늘려 놓은 파드 수를 2로 되돌려 버림)
   # 롤링 업데이트 중에도 "준비된 파드 수"가 replicas 아래로 떨어지지 않게
   strategy:
     type: RollingUpdate

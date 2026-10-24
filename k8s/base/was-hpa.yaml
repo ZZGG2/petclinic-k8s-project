@@ -1,0 +1,31 @@
+# ==============================================================================
+# [Stage 4-1] WAS HorizontalPodAutoscaler — CPU 사용률 기반 파드 수 자동 조절
+#  - 사용률(%) = 실제 CPU 사용량 ÷ requests.cpu(250m)
+#    → averageUtilization 50 = 파드 평균 125m 넘으면 늘리고, 밑돌면 줄임
+#  - 원하는 파드 수 = ceil( 현재 파드 수 × 현재 사용률 / 목표 사용률 )
+#  - 지표는 metrics-server(EKS 애드온)가 15초 주기로 수집
+# ==============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: petclinic-was-hpa
+  namespace: petclinic
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: petclinic-was
+  minReplicas: 2          # PDB(minAvailable 1)가 의미 있으려면 최소 2
+  maxReplicas: 4          # ResourceQuota / 노드 용량 안에서 상한
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0     # 늘릴 때는 즉시 (기본값)
+    scaleDown:
+      stabilizationWindowSeconds: 60    # 줄일 때는 60초 동안 지켜보고 (기본 300초 → 실습용으로 단축)
