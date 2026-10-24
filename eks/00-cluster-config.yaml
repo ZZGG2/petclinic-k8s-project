@@ -64,8 +64,14 @@ managedNodeGroups:
       - "${PRIV_NODE_C}"
     labels:
       role: system
-    # [Stage 1~3] Taint 없음 → 앱 파드(WEB/WAS/DB)도 이 노드에서 실행
-    # [Stage 4] CriticalAddonsOnly=true:NoSchedule Taint를 추가해 앱 파드를 Karpenter 노드로 이동
+    # [Stage 1~3] Taint 없이 운영 → 앱 파드(WEB/WAS/DB)도 이 노드에서 실행
+    # [Stage 4-3] 아래 Taint를 CLI(aws eks update-nodegroup-config)로 추가 → 앱 파드는 Karpenter 노드로 이동
+    #             이 파일은 "현재 클러스터 상태"를 반영하도록 Taint를 기록해 둠
+    #             (Stage 1부터 다시 재현할 때는 이 taints 블록을 빼고 생성)
+    taints:
+      - key: CriticalAddonsOnly
+        value: "true"
+        effect: NoSchedule
     tags:
       Project: petclinic-k8s
       NodeGroupRole: system

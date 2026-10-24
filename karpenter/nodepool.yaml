@@ -1,3 +1,8 @@
+# ==============================================================================
+# [Stage 4-3] Karpenter NodePool — "어떤 노드를, 얼마나, 언제 정리하며" 만들 것인가
+#  - Pending 파드가 생기면 그 파드들의 requests를 합산해 "가장 저렴하게 맞는" 인스턴스를 고름
+#  - 노드 그룹/ASG 없이 EC2를 직접 생성 → 보통 1분 안에 노드 Ready
+# ==============================================================================
 apiVersion: karpenter.sh/v1
 kind: NodePool
 metadata:
@@ -6,32 +11,36 @@ spec:
   template:
     metadata:
       labels:
-        tier: app
+        tier: app                 # Karpenter가 만든 앱 노드 표시 (ng-system 은 role=system)
     spec:
-      nodeClassRef:
+      nodeClassRef:               # "어떻게" 만들지(AMI, 서브넷, SG, Role)는 EC2NodeClass에 위임
         group: karpenter.k8s.aws
         kind: EC2NodeClass
         name: default
+      # 후보 인스턴스 조건 — 이 안에서 Karpenter가 가격/용량을 보고 선택
       requirements:
         - key: kubernetes.io/arch
           operator: In
-          values: ["amd64"]
+          values: ["amd64"]       # 이미지가 amd64 빌드이므로 ARM(Graviton) 제외
         - key: kubernetes.io/os
           operator: In
           values: ["linux"]
         - key: karpenter.sh/capacity-type
           operator: In
-          values: ["on-demand", "spot"]
+          values: ["on-demand", "spot"]   # Spot이 가능하면 Spot 우선 (더 저렴), 중단 시 SQS로 미리 통보받음
         - key: karpenter.k8s.aws/instance-family
           operator: In
           values: ["t3", "m7i-flex", "c7i-flex"]
         - key: karpenter.k8s.aws/instance-size
           operator: In
           values: ["medium", "large"]
-  # 클러스터 앱 노드 상한 (ResourceQuota 네임스페이스 상한과 함께 2단계 보호)
+  # 클러스터 앱 노드 총량 상한 (네임스페이스 ResourceQuota와 함께 2단계 보호 — 무한 증설 방지)
   limits:
     cpu: "16"
     memory: 32Gi
   disruption:
+    # 비었거나(Empty) 덜 쓰는(Underutilized) 노드를 정리 → 파드를 다른 노드로 옮기고 노드 삭제/교체
     consolidationPolicy: WhenEmptyOrUnderutilized
-    consolidateAfter: 1m
+    consolidateAfter: 1m          # 조건을 만족한 뒤 1분 지켜보고 실행
+    budgets:
+      - nodes: "1"                # 한 번에 최대 1대씩만 정리 (PDB와 함께 서비스 중단 최소화)
