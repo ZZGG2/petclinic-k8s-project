@@ -2,7 +2,8 @@
 # WAS (Tomcat 11 + spring-framework-petclinic)  — Stage 2 버전
 #  - DB 접속 정보: Secret(petclinic-was-dbconfig) → data-access.properties 파일 1개만 subPath로 교체
 #  - 자동 초기화 OFF: ConfigMap(petclinic-config)의 empty.sql 을 /config 에 마운트
-#  - Probe / resources / topologySpread 는 Stage 3, HPA 는 Stage 4 에서 추가
+#  - [Stage 3-1] 3종 Probe 추가 (startup / liveness / readiness)
+#  - resources / topologySpread 는 Stage 3 후반, HPA 는 Stage 4 에서 추가
 # ==============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -28,6 +29,35 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+          # ── Probe 3종: "무엇을 확인하느냐"가 서로 다름 ──────────────────────────
+          # ① startupProbe: 기동 완료(Spring 컨텍스트 로딩)까지 기다려 줌
+          #    통과 전에는 liveness/readiness를 실행하지 않음 → 느린 기동 중 재시작 방지
+          #    5초 × 24회 = 최대 120초 대기, 그래도 실패하면 컨테이너 재시작
+          startupProbe:
+            httpGet:
+              path: /petclinic/resources/images/pets.png
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          # ② livenessProbe: "프로세스가 살아 있나?" → 실패하면 컨테이너 재시작
+          #    DB를 거치지 않는 정적 리소스로 검사 → DB 장애 때 WAS까지 재시작되는 연쇄 장애 방지
+          livenessProbe:
+            httpGet:
+              path: /petclinic/resources/images/pets.png
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          # ③ readinessProbe: "지금 요청을 받을 수 있나?" → 실패하면 Service 엔드포인트에서 제외 (재시작 X)
+          #    /petclinic/vets 는 @Cacheable("vets") 때문에 DB가 죽어도 200 → 사용 금지
+          #    /petclinic/owners?lastName= 는 매번 DB SELECT → DB 연결 상태까지 반영
+          readinessProbe:
+            httpGet:
+              path: /petclinic/owners?lastName=
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
           volumeMounts:
             - name: dbconfig
               mountPath: /usr/local/tomcat/webapps/petclinic/WEB-INF/classes/spring/data-access.properties
