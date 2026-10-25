@@ -65,13 +65,19 @@ kubectl delete job check-report -n $NS --ignore-not-found >/dev/null 2>&1
 echo "== 6. 외부 접속 (ALB)"
 ALB=$(kubectl get gateway petclinic-gateway -n $NS -o jsonpath='{.status.addresses[0].value}')
 [ -n "$ALB" ] && ok "ALB 주소: http://$ALB/" || ng "Gateway 주소 없음"
-c1=$(curl -s -o /tmp/idx.html -w '%{http_code}' -m 10 "http://$ALB/")
+BASE="http://$ALB"; [ -n "${DOMAIN:-}" ] && BASE="https://$DOMAIN"
+ok "점검 대상: $BASE"
+c1=$(curl -s -o /tmp/idx.html -w '%{http_code}' -m 10 "$BASE/")
 [ "$c1" = 200 ] && ok "/ → 200" || ng "/ → $c1"
 grep -q 'data-ver="v1"' /tmp/idx.html && grep -q 'PetClinic on Amazon EKS' /tmp/idx.html && ok "/ 가 새 발표용 페이지(v1)" || ng "/ 가 새 index.html 이 아님"
-c2=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "http://$ALB/petclinic/owners?lastName=")
+c2=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$BASE/petclinic/owners?lastName=")
 [ "$c2" = 200 ] && ok "/petclinic/owners → 200 (WEB→WAS→DB)" || ng "/petclinic/owners → $c2"
-c3=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "http://$ALB/healthz")
+c3=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$BASE/healthz")
 [ "$c3" = 200 ] && ok "/healthz → 200" || ng "/healthz → $c3"
+if [ -n "${DOMAIN:-}" ]; then
+  r=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -m 10 "http://$DOMAIN/")
+  [[ "$r" == 301\ https://$DOMAIN* ]] && ok "http://$DOMAIN → 301 HTTPS 리다이렉트" || ng "HTTP 리다이렉트 이상: $r"
+fi
 
 echo "== 7. 오토스케일링 / 노드"
 chk "WAS HPA 지표 수집 중" bash -c "kubectl get hpa petclinic-was-hpa -n $NS -o jsonpath='{.status.currentMetrics[0].resource.current.averageUtilization}' | grep -qE '^[0-9]+$'"
