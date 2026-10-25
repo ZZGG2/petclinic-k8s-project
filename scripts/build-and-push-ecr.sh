@@ -7,7 +7,7 @@ REGION="${REGION:-ap-northeast-2}"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 ECR_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
 # 이미지 태그는 덮어쓰지 않고 새 태그로 올림 (노드의 이미지 캐시 때문에 같은 태그는 갱신이 안 될 수 있음)
-WEB_TAG="${WEB_TAG:-v1}"
+WEB_TAG="${WEB_TAG:-v1.1}"
 WAS_TAG="${WAS_TAG:-v1.2}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
