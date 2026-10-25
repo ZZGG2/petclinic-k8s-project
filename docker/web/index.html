@@ -3,423 +3,399 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PetClinic on EKS</title>
+<title>PetClinic on Amazon EKS</title>
 <style>
 :root{
-  --bg:#f6f7fb; --card:#ffffff; --fg:#0f172a; --muted:#5b6478; --line:#c9d0dd; --node:#ffffff;
-  --accent:#2563eb; --accent-soft:#e0eaff; --accent-fg:#1e3a8a; --ok:#16a34a; --bad:#dc2626; --warn:#d97706;
-  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-  --mono:ui-monospace,SFMono-Regular,Consolas,"D2Coding",monospace;
+  --bg:#ffffff; --fg:#16191f; --muted:#5f6b7a; --line:#d5dbe3; --soft:#f4f6f8;
+  --accent:#ec7211; --accent-soft:#fdf0e5; --ink:#232f3e;
+  --font:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;
+  --mono:Consolas,"D2Coding",ui-monospace,monospace;
 }
-html[data-theme="dark"]{
-  --bg:#0b1020; --card:#121a2e; --fg:#e8ecf6; --muted:#9aa5bd; --line:#334063; --node:#17213a;
-  --accent:#5b9bff; --accent-soft:#1b2c55; --accent-fg:#cfe0ff;
-}
-html[data-ver="v2"]{ --accent:#ea580c; --accent-soft:#ffe7d6; --accent-fg:#7c2d12; }
-html[data-ver="v2"][data-theme="dark"]{ --accent:#ff8a3d; --accent-soft:#3b1d0c; --accent-fg:#ffd9c0; }
+html[data-ver="v2"]{ --accent:#0972d3; --accent-soft:#e8f1fb; }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);line-height:1.6}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 var(--font)}
 a{color:inherit}
-header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;padding:12px 24px;border-bottom:1px solid var(--line);background:var(--card)}
-header .brand{font-weight:700;letter-spacing:-.01em}
-.ver{font:600 12px var(--mono);padding:2px 8px;border-radius:999px;background:var(--accent);color:#fff}
-header .sp{flex:1}
-.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--fg);
-  padding:8px 14px;border-radius:10px;font:600 14px var(--font);cursor:pointer;text-decoration:none}
-.btn:hover{border-color:var(--accent)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.sm{padding:5px 10px;font-size:13px}
-.status{display:flex;gap:8px;font:12px var(--mono);color:var(--muted)}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--line);margin-right:4px;vertical-align:middle}
-.dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)}
-main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px;padding:20px 24px;max-width:1600px;margin:0 auto}
-@media (max-width:1000px){ main{grid-template-columns:1fr;padding:16px} header{padding:10px 16px} .arch-wrap{position:static} h1{font-size:26px} }
-.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
-.arch-wrap{position:sticky;top:12px;align-self:start}
-svg.arch{width:100%;height:auto;display:block}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding:14px 32px;border-bottom:1px solid var(--line)}
+.top .name{font-weight:700;font-size:17px;color:var(--ink)}
+.top .meta{color:var(--muted);font-size:13px}
+.top .sp{flex:1}
+.top a.link{font-size:14px;text-decoration:none;color:var(--ink);padding:6px 12px;border:1px solid var(--line);border-radius:4px}
+.top a.link:hover{border-color:var(--ink)}
+.top a.link.main{background:var(--ink);border-color:var(--ink);color:#fff}
+.tabs{display:flex;gap:0;padding:0 32px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{border:0;background:none;font:14px var(--font);color:var(--muted);padding:12px 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--fg);font-weight:600;border-bottom-color:var(--accent)}
+main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:32px;padding:24px 32px 40px;max-width:1680px;margin:0 auto}
+@media (max-width:1080px){ main{grid-template-columns:1fr;padding:20px 16px} .top,.tabs{padding-left:16px;padding-right:16px} }
+.fig{align-self:start;position:sticky;top:16px}
+@media (max-width:1080px){ .fig{position:static} }
+svg.arch{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:10px;margin-right:6px;vertical-align:-1px;border-radius:2px}
 .slide{display:none}
-.slide.active{display:block;animation:fade .35s ease}
-@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.kicker{font:600 13px var(--mono);color:var(--accent);letter-spacing:.04em}
-h1{font-size:32px;line-height:1.25;margin:6px 0 10px;letter-spacing:-.02em}
-h2{font-size:24px;line-height:1.3;margin:4px 0 6px;letter-spacing:-.01em}
-h3{font-size:15px;margin:18px 0 6px;color:var(--muted);font-weight:700}
-p.lead{font-size:16px;color:var(--muted);margin:0 0 8px}
-ul{margin:4px 0;padding-left:20px} li{margin:3px 0}
-code{overflow-wrap:anywhere;font:13px var(--mono);background:var(--accent-soft);color:var(--accent-fg);padding:1px 6px;border-radius:6px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
-.chip{font:12px var(--mono);border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--muted)}
-.callout{border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);padding:10px 14px;border-radius:0 10px 10px 0;margin-top:14px;font-size:14px}
-.callout b{color:var(--warn)}
-.demo{border-left:4px solid var(--accent);background:var(--accent-soft);color:var(--accent-fg);padding:10px 14px;border-radius:0 10px 10px 0;margin-top:12px;font-size:14px}
-table{border-collapse:collapse;width:100%;font-size:14px;margin-top:6px}
-td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left;vertical-align:top}
-th{color:var(--muted);font-weight:600}
-.nav{display:flex;align-items:center;gap:10px;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
-.dots{display:flex;gap:6px;flex:1;flex-wrap:wrap}
-.dots button{width:10px;height:10px;border-radius:50%;border:0;background:var(--line);cursor:pointer;padding:0}
-.dots button.on{background:var(--accent);width:26px;border-radius:999px}
-.time{font:12px var(--mono);color:var(--muted)}
-.cover-btns{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 6px}
-/* ---------- SVG ---------- */
-.arch text{fill:var(--fg);font-family:var(--font)}
-.arch .tt{font-size:14px;font-weight:700}
-.arch .ts{font-size:11.5px;fill:var(--muted)}
-.arch .lbl{font-size:12px;fill:var(--muted);font-weight:600}
-.arch .box{fill:none;stroke:var(--line);stroke-width:1.2}
-.arch .dash{stroke-dasharray:5 4}
-.arch .n rect{fill:var(--node);stroke:var(--line);stroke-width:1.2}
-.arch .c rect{fill:var(--accent-soft);stroke:none}
-.arch .c text{fill:var(--accent-fg);font:600 11px var(--mono)}
-.arch .ext rect{stroke-dasharray:4 3}
-.arch .flow{fill:none;stroke:var(--muted);stroke-width:1.6;stroke-dasharray:6 6;animation:flow 1.2s linear infinite}
-.arch .flow.sub{stroke-width:1.2;stroke-dasharray:3 5}
+.slide.on{display:block}
+.step{font-size:13px;color:var(--muted);margin:0}
+h1{font-size:28px;line-height:1.35;margin:4px 0 12px;color:var(--ink)}
+h2{font-size:22px;line-height:1.4;margin:2px 0 14px;color:var(--ink)}
+h3{font-size:14px;margin:22px 0 6px;color:var(--ink)}
+p{margin:0 0 10px}
+ul{margin:0;padding-left:18px} li{margin:4px 0}
+code{font:13px var(--mono);background:var(--soft);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{border-top:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+tr:last-child td,tr:last-child th{border-bottom:1px solid var(--line)}
+th{width:88px;color:var(--muted);font-weight:600}
+.note{margin-top:16px;padding:10px 14px;background:var(--soft);border-left:3px solid var(--line);font-size:14px}
+.note b{color:var(--ink)}
+.issue{margin-top:16px;padding:10px 14px;border-left:3px solid var(--accent);background:var(--accent-soft);font-size:14px}
+.pager{display:flex;align-items:center;gap:10px;margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.pager .sp{flex:1}
+.pager button{font:14px var(--font);padding:7px 14px;border:1px solid var(--line);background:#fff;border-radius:4px;cursor:pointer;color:var(--ink)}
+.pager button:hover{border-color:var(--ink)}
+.status{font-size:12.5px;color:var(--muted)}
+.status i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c3cad3;margin:0 4px 1px 10px}
+.status i.ok{background:#1d8102} .status i.bad{background:#d13212}
+.ver{font:12px var(--mono);color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 5px}
+/* ---- diagram ---- */
+.arch text{font-family:var(--font)}
+.arch .gl{font-size:12.5px;font-weight:600;fill:#232f3e}
+.arch .gs{font-size:11.5px;fill:#5f6b7a}
+.arch .lb{font-size:12.5px;font-weight:600;fill:#16191f}
+.arch .sb{font-size:11px;fill:#5f6b7a}
+.arch .bt{font-size:13px;font-weight:700;fill:#16191f}
+.arch .bt.sm{font-size:11.5px;font-weight:600}
+.arch .bs{font-size:11px;fill:#5f6b7a}
+.arch .g-cloud{fill:none;stroke:#232f3e;stroke-width:1}
+.arch .g-vpc{fill:none;stroke:#8c4fff;stroke-width:1}
+.arch .g-pub{fill:#f2f8ec;stroke:#7aa116;stroke-width:1}
+.arch .g-priv{fill:#e6f6f7;stroke:#00a4a6;stroke-width:1}
+.arch .g-eks{fill:#fff;stroke:#ed7100;stroke-width:1;stroke-dasharray:5 3}
+.arch .g-ng{fill:#fafbfc;stroke:#aab7c4;stroke-width:1}
+.arch .g-karp{fill:#fafbfc;stroke:#ed7100;stroke-width:1;stroke-dasharray:3 3}
+.arch .g-ns{fill:#fff;stroke:#aab7c4;stroke-width:1}
+.arch .pod rect,.arch .row rect{fill:#fff;stroke:#8d99a8;stroke-width:1}
+.arch .chip rect{fill:#eef1f4;stroke:none}
+.arch .chip text{font:600 10.5px var(--mono);fill:#3b4754}
+.arch .hl{fill:none;stroke:none}
+.arch .flow{fill:none;stroke:#545b64;stroke-width:1.5}
+.arch .flow.sub{stroke-dasharray:4 4;stroke-width:1.2}
+.arch .flow.faint{stroke:#aab7c4;stroke-dasharray:2 4;stroke-width:1.2}
 .arch .pkt{fill:var(--accent)}
-@keyframes flow{to{stroke-dashoffset:-24}}
-@media (prefers-reduced-motion:reduce){.arch .flow{animation:none}.arch .pkt{display:none}}
-.arch [data-s]{transition:opacity .45s ease}
-.arch .is-hidden{opacity:.06}
-.arch .is-ghost{opacity:.3}
-.arch .is-new.n rect{stroke:var(--accent);stroke-width:2.6}
-.arch .is-new.flow{stroke:var(--accent);stroke-width:2.4}
-.arch .is-new.c rect{fill:var(--accent)} .arch .is-new.c text{fill:#fff}
-.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
-.legend i{display:inline-block;width:18px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
-:fullscreen main{max-width:none}
+.arch .part{transition:opacity .35s}
+.arch .is-off{opacity:.07}
+.arch .is-new.ic .hl{stroke:var(--accent);stroke-width:2}
+.arch .is-new.pod rect,.arch .is-new.row rect{stroke:var(--accent);stroke-width:2;fill:var(--accent-soft)}
+.arch .is-new.chip rect{fill:var(--accent)}
+.arch .is-new.chip text{fill:#fff}
+.arch .is-new.flow{stroke:var(--accent);stroke-width:2}
+.arch .is-new > rect[class^="g-"]{stroke:var(--accent);stroke-width:1.6}
+@media (prefers-reduced-motion:reduce){ .arch .pkt{display:none} }
 </style>
 </head>
 <body>
-<header>
-  <span class="brand">PetClinic on Amazon EKS</span>
-  <span class="ver" id="ver">v1</span>
-  <span class="status" aria-live="polite">
-    <span><span class="dot" id="st-web"></span>WEB</span>
-    <span><span class="dot" id="st-was"></span>WAS·DB</span>
-  </span>
+<div class="top">
+  <span class="name">PetClinic on Amazon EKS</span>
+  <span class="meta">Docker · Kubernetes 개인 프로젝트 · 2026.10</span>
+  <span class="status">상태<i id="st-web"></i>WEB<i id="st-was"></i>WAS·DB</span>
   <span class="sp"></span>
-  <a class="btn sm primary" href="/petclinic/">PetClinic 열기 →</a>
-  <a class="btn sm" href="https://github.com/ZZGG2/petclinic-k8s-project" target="_blank" rel="noopener">GitHub</a>
-  <button class="btn sm" id="themeBtn" aria-label="테마 전환">◐</button>
-  <button class="btn sm" id="fsBtn" title="전체 화면 (F)">⛶</button>
-</header>
+  <a class="link main" href="/petclinic/">PetClinic 열기</a>
+  <a class="link" href="https://github.com/ZZGG2/petclinic-k8s-project" target="_blank" rel="noopener">GitHub</a>
+</div>
+<nav class="tabs" id="tabs" aria-label="목차"></nav>
 
 <main>
-  <!-- ================= 아키텍처 ================= -->
-  <section class="panel arch-wrap" aria-label="아키텍처 다이어그램">
-    <svg class="arch" viewBox="0 0 900 560" role="img" aria-labelledby="archTitle">
-      <title id="archTitle">PetClinic EKS 아키텍처 — 단계별 구성 요소</title>
-      <defs>
-        <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-        </marker>
-      </defs>
+<section class="fig" aria-label="아키텍처">
+  <svg class="arch" viewBox="0 0 900 620" role="img" aria-labelledby="t-arch">
+    <title id="t-arch">PetClinic EKS 아키텍처</title>
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </marker>
+<symbol id="i-route53" viewBox="0 0 64 64"><g fill="none" fill-rule="evenodd"><path fill="#8c4fff" d="M0 0h64v64H0z"/><path fill="#fff" d="M38.761 32.527q.862.796.862 2.137 0 1.46-1.049 2.33t-2.82.871a6.9 6.9 0 0 1-2.768-.595v-1.192q1.622.536 2.768.536 1.13 0 1.741-.506.611-.507.611-1.444 0-1.802-2.278-1.802-.714 0-1.414.074v-.983l3.126-3.41h-4.406v-1.221h6.059v1.177l-3.067 3.246a1 1 0 0 1 .149-.015h.149q1.474 0 2.337.797m-8.647-.26q.906.848.907 2.337 0 1.46-1.057 2.36-1.058.901-2.783.901-1.518 0-2.843-.595v-1.192q1.653.536 2.828.536 1.131 0 1.734-.513.603-.514.602-1.482.001-1.057-.565-1.534-.565-.476-1.846-.476-.922 0-2.307.149v-.983l.284-4.453H30.5v1.222h-4.182l-.195 3.023q.819-.15 1.474-.15 1.608 0 2.517.85m11.147 10.697c-3.745.672-7.028 2.182-9.261 3.431-2.232-1.25-5.515-2.76-9.26-3.431-1.032-.185-6.174-1.256-6.174-4.14 0-1.361.497-2.282 1.451-3.924 1.116-1.926 2.646-4.564 2.646-8.226 0-2.564-.659-5.023-1.96-7.32l.269-.331c1.955.95 3.987 1.43 6.053 1.43 2.546 0 4.889-.657 6.975-1.951 2.086 1.294 4.43 1.95 6.976 1.95 2.065 0 4.097-.48 6.053-1.43l.268.331c-1.301 2.298-1.96 4.757-1.96 7.32 0 3.663 1.53 6.3 2.647 8.227.954 1.642 1.451 2.563 1.451 3.925 0 2.883-5.143 3.954-6.174 4.139m4.076-16.29c0-2.415.682-4.73 2.025-6.882a1 1 0 0 0-.074-1.162c-.395-.485-.809-.994-1.218-1.5a1 1 0 0 0-1.261-.246c-1.883 1.04-3.846 1.568-5.833 1.568-2.4 0-4.494-.644-6.406-1.97a1 1 0 0 0-1.139 0c-1.912 1.326-4.007 1.97-6.406 1.97-1.988 0-3.951-.528-5.833-1.568a1 1 0 0 0-1.261.246c-.409.506-.823 1.015-1.219 1.5a1 1 0 0 0-.073 1.162c1.343 2.152 2.024 4.467 2.024 6.882 0 3.124-1.262 5.3-2.377 7.221-1.066 1.84-1.72 3.06-1.72 4.93 0 4.363 5.985 5.778 7.82 6.108 3.75.674 7.024 2.265 9.111 3.48a1 1 0 0 0 1.006 0c2.087-1.215 5.362-2.806 9.112-3.48 1.834-.33 7.82-1.745 7.82-6.108 0-1.87-.654-3.09-1.721-4.93-1.114-1.92-2.377-4.097-2.377-7.221m-3.269 20.785c-4.666.838-8.6 3.296-10.068 4.309-1.468-1.013-5.401-3.47-10.067-4.31-2.33-.418-9.933-2.28-9.933-8.633 0-2.655 1.004-4.387 2.068-6.22.998-1.72 2.03-3.498 2.03-5.931 0-3.667-2.027-6.302-3.157-7.487 1.154-1.405 3.695-4.506 5.088-6.29 2.122 1.935 4.571 2.988 6.996 2.988 2.701 0 4.942-1.065 6.975-3.336 2.033 2.27 4.275 3.336 6.976 3.336 2.425 0 4.874-1.053 6.996-2.988 1.393 1.784 3.934 4.885 5.088 6.29-1.13 1.185-3.157 3.82-3.157 7.487 0 2.433 1.032 4.212 2.03 5.932C50.996 34.438 52 36.17 52 38.825c0 6.354-7.602 8.215-9.932 8.634M51.662 31.6c-.944-1.627-1.759-3.033-1.759-4.927 0-4.002 3.121-6.603 3.15-6.627a1 1 0 0 0 .143-1.414c-.052-.062-5.147-6.24-6.311-7.835a1 1 0 0 0-1.538-.094c-1.917 2.05-4.18 3.18-6.371 3.18-2.416 0-4.322-1.083-6.182-3.513-.379-.495-1.209-.495-1.588 0-1.859 2.43-3.765 3.513-6.181 3.513-2.192 0-4.454-1.13-6.371-3.18a1 1 0 0 0-1.539.094c-1.164 1.596-6.258 7.773-6.31 7.835-.17.206-.25.47-.224.737.028.266.159.51.367.677.032.026 3.15 2.595 3.15 6.627 0 1.894-.816 3.3-1.76 4.927C11.242 33.49 10 35.631 10 38.825c0 5.336 4.328 9.3 11.579 10.604 5.316.954 9.768 4.33 9.813 4.365a1 1 0 0 0 1.218-.001c.044-.034 4.478-3.406 9.811-4.364C49.672 48.125 54 44.16 54 38.825c0-3.194-1.242-5.335-2.338-7.224"/></g></symbol>
+<symbol id="i-acm" viewBox="0 0 64 64"><g fill="none" fill-rule="evenodd"><path fill="#dd344c" d="M0 0h64v64H0z"/><path fill="#fff" d="M28.722 30.981a1 1 0 0 1 .261.877l-.589 3.14 3.092-1.855a.99.99 0 0 1 1.029 0l3.093 1.855-.59-3.146a1 1 0 0 1 .261-.876l2.661-2.779-3.585-.532a1 1 0 0 1-.736-.518l-1.627-3.043-1.667 3.054c-.15.274-.419.463-.729.51l-3.539.536zm-2.704 5.834.904-4.82-3.643-3.798a.999.999 0 0 1 .572-1.681l4.955-.752 2.316-4.243c.176-.321.513-.521.878-.521h.004c.367.002.704.205.878.528l2.264 4.232 5.001.743a1 1 0 0 1 .575 1.681l-3.645 3.804.906 4.828a.999.999 0 0 1-1.497 1.041L32 35.166l-4.485 2.691a.99.99 0 0 1-1.086-.036 1 1 0 0 1-.411-1.006M12 17.017h39.997V13H12zM54 52a.997.997 0 0 1-1 1h-5v-2h4l-.002-31.983H12V51h29v2H11a1 1 0 0 1-1-1V12a1 1 0 0 1 1-1h41.997a1 1 0 0 1 1 1zm-35-5h5v-2h-5zm8 0h11v-2H27zm-8-4.003h5v-2h-5zM27 43h18v-2H27z"/></g></symbol>
+<symbol id="i-ecr" viewBox="0 0 64 64"><g fill="none" fill-rule="evenodd"><path fill="#ed7100" d="M0 0h64v64H0z"/><path fill="#fff" d="M30.726 29.922c-.447.26-.726.745-.726 1.263v20.35l-15-8.677V23.01l17.172-9.933 14.916 7.38zm18.978-9.502c0-.518-.278-1-.783-1.288l-16.042-7.936a1.45 1.45 0 0 0-1.451-.002l-17.699 10.24c-.449.259-.729.743-.729 1.263v20.476c0 .518.279 1.001.728 1.262l16.088 9.306a1.45 1.45 0 0 0 1.456.001c.449-.259.728-.743.728-1.263v-20.98l16.978-9.821c.448-.259.726-.74.726-1.258M50 42.941l-12.996 8.592V44.41l6.599-4.994c.25-.19.397-.486.397-.8V30.48l6-3.474zm1.273-18.142a1.45 1.45 0 0 0-1.456 0l-6.938 4.014c-.24.13-.879.475-.879 1.217v8.087l-6.337 4.796a1.47 1.47 0 0 0-.659 1.221v8.412c0 .52.28 1.004.729 1.264.218.125.462.19.712.19.264 0 .537-.072.794-.222l14.036-9.28c.447-.26.725-.744.725-1.262V26.063c0-.52-.279-1.004-.727-1.264"/></g></symbol>
+<symbol id="i-cw" viewBox="0 0 64 64"><g fill="none" fill-rule="evenodd"><path fill="#e7157b" d="M0 0h64v64H0z"/><path fill="#fff" d="M42.184 39.381a4.095 4.095 0 0 0-8.189 0 4.095 4.095 0 0 0 8.189 0m2 0c0 3.353-2.734 6.081-6.095 6.081s-6.094-2.728-6.094-6.08c0-3.354 2.734-6.082 6.094-6.082s6.095 2.728 6.095 6.081m6.559 10.235-4.897-4.4a10 10 0 0 1-1.061 1.19l4.886 4.397a.806.806 0 0 0 1.131-.059.8.8 0 0 0-.059-1.128m-12.654-2.524c4.262 0 7.729-3.46 7.729-7.71 0-4.252-3.467-7.711-7.729-7.711-4.26 0-7.727 3.459-7.727 7.71s3.467 7.71 7.727 7.71m13.992 1.042a2.796 2.796 0 0 1 .207 3.946c-.553.61-1.317.92-2.083.92a2.8 2.8 0 0 1-1.872-.713l-5.161-4.646a9.67 9.67 0 0 1-5.083 1.446c-5.364 0-9.727-4.354-9.727-9.706s4.363-9.706 9.727-9.706c5.365 0 9.729 4.354 9.729 9.706a9.6 9.6 0 0 1-.921 4.095zM17.697 23.538c0 .401.023.8.07 1.185a.997.997 0 0 1-.806 1.101C15.084 26.308 12 27.772 12 32.157c0 3.323 1.836 5.157 3.377 6.11.672.423 1.263.638 1.761.643h8.989v1.996h-9c-.884-.01-1.827-.329-2.81-.947C12.708 38.964 10 36.62 10 32.157c0-5.27 3.526-7.293 5.71-8.04a14 14 0 0 1-.013-.579c0-4.378 2.976-8.916 6.924-10.56 4.611-1.927 9.498-.971 13.066 2.556 1.047 1.033 1.917 2.274 2.598 3.702a5.3 5.3 0 0 1 3.174-1.061c2.415 0 5.128 1.793 5.663 5.715C50.58 24.722 54 27.278 54 32.217c0 2.89-1.136 5.24-3.287 6.792l-1.172-1.616C51.173 36.214 52 34.473 52 32.217c0-4.978-4.189-6.217-5.99-6.519a.996.996 0 0 1-.824-1.127c-.255-3.04-2.045-4.401-3.727-4.401-1.057 0-2.05.516-2.725 1.416a.999.999 0 0 1-1.741-.26c-.634-1.752-1.547-3.223-2.712-4.375-1.43-1.411-5.348-4.444-10.89-2.132-3.193 1.33-5.694 5.16-5.694 8.72"/></g></symbol>
+<symbol id="i-sm" viewBox="0 0 64 64"><g fill="none" fill-rule="evenodd"><path fill="#dd344c" d="M0 0h64v64H0z"/><path fill="#fff" d="M31.24 34.64a.76.76 0 0 0 1.52 0 .76.76 0 0 0-1.52 0m-2 0A2.763 2.763 0 0 1 32 31.88a2.764 2.764 0 0 1 2.76 2.76A2.76 2.76 0 0 1 33 37.205V40h-2v-2.795a2.76 2.76 0 0 1-1.76-2.565M39 31H25v10h14v-2h-2v-2h2v-2h-2v-2h2zm-12-2h9.999L37 25c0-.865-.576-1.859-1.543-2.659-1.014-.84-2.305-1.341-3.454-1.341h-.002c-2.383 0-5 2.093-5.001 4zm12-4-.001 4H40a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H24a1 1 0 0 1-1-1V30a1 1 0 0 1 1-1h1v-4c.001-3.029 3.469-6 7.001-6h.002c1.625 0 3.348.657 4.729 1.801C38.174 21.994 39.001 23.525 39 25M15.489 43.95l1.621-1.173A18.2 18.2 0 0 1 13.676 33H16v-2h-2.322a18.2 18.2 0 0 1 3.432-9.719l-1.621-1.173A20.18 20.18 0 0 0 11.678 31H10v2h1.676c.185 3.962 1.484 7.731 3.813 10.95m27.258 2.968A18.2 18.2 0 0 1 33 50.35V48h-2v2.35a18.2 18.2 0 0 1-9.75-3.432l-1.172 1.62A20.17 20.17 0 0 0 31 52.35V54h2v-1.65c3.951-.19 7.709-1.488 10.919-3.812zM21.25 17.14A18.2 18.2 0 0 1 31 13.707V16h2v-2.293a18.2 18.2 0 0 1 9.747 3.433l1.172-1.62A20.16 20.16 0 0 0 33 11.707V10h-2v1.707a20.17 20.17 0 0 0-10.922 3.813zM52.319 31a20.17 20.17 0 0 0-3.81-10.892l-1.622 1.173A18.16 18.16 0 0 1 50.319 31H48v2h2.322a18.2 18.2 0 0 1-3.435 9.777l1.622 1.173c2.329-3.219 3.627-6.988 3.813-10.95H54v-2zm-7.293-10.584 6.159-6.16-1.414-1.414-6.159 6.16zM18.971 43.642l-6.16 6.16 1.414 1.414 6.161-6.16zm4.275-21.809-11.66-11.66-1.414 1.414 11.66 11.66zM43.303 41.89l10.523 10.523-1.414 1.414-10.524-10.523z"/></g></symbol>
+<symbol id="i-eks" viewBox="0 0 64 64"><g fill="none" fill-rule="evenodd"><path fill="#ed7100" d="M0 0h64v64H0z"/><path fill="#fff" d="m37.708 25-5.058 6.34 5.317 6.681h-2.215L31 32.001v6h-2V25h2v5.24l4.463-5.24zM50 36.382l-6-3V25a1 1 0 0 0-.515-.874L35 19.412V12.75l15 8.822zm1.507-16.244-17-10a1.001 1.001 0 0 0-1.507.863v9c0 .362.197.697.515.873L42 25.588V34c0 .38.214.725.553.895l8 4a1 1 0 0 0 .972-.044c.295-.183.475-.504.475-.85V21c0-.355-.188-.683-.493-.863M32 51.828 15 41.439V21.554l14-8.75v6.642l-7.53 4.706A1 1 0 0 0 21 25v13a1 1 0 0 0 .485.857l10 6a1 1 0 0 0 .994.021l10.509-5.732 5.047 2.883zm18.496-10.696-7-4a1 1 0 0 0-.975-.01l-10.498 5.726L23 37.434v-11.88l7.53-4.706A1 1 0 0 0 31 20v-9a1 1 0 0 0-1.53-.847l-16 10A1 1 0 0 0 13 21v21c0 .348.182.671.479.854l18 11a1 1 0 0 0 1.042 0l18-11a1 1 0 0 0-.025-1.722"/></g></symbol>
+<symbol id="i-rds" viewBox="0 0 64 64"><g fill="none" fill-rule="evenodd"><path fill="#c925d1" d="M0 0h64v64H0z"/><path fill="#fff" d="M54 11v8h-2v-5.586l-6.293 6.293-1.414-1.414L50.586 12h-5.461v-2H53a1 1 0 0 1 1 1m-42 7.875h-2V11a1 1 0 0 1 1-1h8v2h-5.586l6.293 6.293-1.414 1.414L12 13.414zm7.707 26.832L13.414 52h5.461v2H11a1 1 0 0 1-1-1v-8h2v5.586l6.293-6.293zM51.5 31.781c0-2.429-2.866-4.849-7.667-6.474l.641-1.894c5.736 1.941 9.026 4.991 9.026 8.368s-3.29 6.427-9.026 8.369l-.641-1.895c4.801-1.624 7.667-4.045 7.667-6.474m-38.957 0c0 2.324 2.681 4.679 7.172 6.3l-.68 1.88c-5.396-1.947-8.492-4.928-8.492-8.18s3.096-6.233 8.492-8.18l.68 1.881c-4.491 1.621-7.172 3.976-7.172 6.299M52 45.125h2V53a1 1 0 0 1-1 1h-8v-2h5.586l-6.293-6.293 1.414-1.414L52 50.586zM32.022 31.402c-5.023 0-7.896-1.343-8.022-1.919v-3.226c2.159 1.009 5.609 1.336 8 1.336s5.841-.327 8-1.336v3.226c-.106.574-2.949 1.919-7.978 1.919m0 5.728c-5.023 0-7.896-1.344-8.022-1.92v-3.254c1.953.981 5.055 1.446 8.022 1.446 2.951 0 6.033-.464 7.978-1.442v3.25c-.106.575-2.948 1.92-7.978 1.92M32 42.268c-5.05 0-7.896-1.351-8-1.922v-2.663c1.953.982 5.055 1.447 8.022 1.447 2.951 0 6.033-.464 7.978-1.443v2.655c-.104.575-2.95 1.926-8 1.926m0-20.075c4.971 0 7.642 1.177 7.982 1.701-.34.523-3.011 1.699-7.982 1.699-5.091 0-7.767-1.232-8-1.644v-.019c.233-.504 2.909-1.737 8-1.737m0-2c-3.714 0-10 .78-10 3.701v16.452c0 2.695 5.184 3.922 10 3.922s10-1.227 10-3.922V23.894c0-2.921-6.286-3.701-10-3.701"/></g></symbol>
+<symbol id="i-alb" viewBox="0 0 48 48"><path fill="#8c4fff" fill-rule="evenodd" d="M33.69 34.375h2.345V32H33.69zm-6.939 0h2.375V32h-2.375zm-7.875 0h2.375V32h-2.375zm-6.91 0h2.285V32h-2.285zm6.035-17.5h12V11h-12zM37.035 30h-1.534v-3.375a1 1 0 0 0-1-1h-2.5V22.25a1 1 0 0 0-1-1h-6v-2.375h6a1 1 0 0 0 1-1V10a1 1 0 0 0-1-1h-14a1 1 0 0 0-1 1v7.875a1 1 0 0 0 1 1h6v2.375h-6a1 1 0 0 0-1 1v3.375h-2.5a1 1 0 0 0-1 1V30h-1.536a1 1 0 0 0-1 1v4.375a1 1 0 0 0 1 1h4.286a1 1 0 0 0 1-1V31a1 1 0 0 0-1-1h-.75v-2.375h4.125V30h-.75a1 1 0 0 0-1 1v4.375a1 1 0 0 0 1 1h4.375a1 1 0 0 0 1-1V31a1 1 0 0 0-1-1h-1.625v-3.375a1 1 0 0 0-1-1h-1.625V23.25h12v2.375h-1.625a1 1 0 0 0-1 1V30h-1.625a1 1 0 0 0-1 1v4.375a1 1 0 0 0 1 1h4.375a1 1 0 0 0 1-1V31a1 1 0 0 0-1-1h-.75v-2.375h4.125V30h-.811a1 1 0 0 0-1 1v4.375a1 1 0 0 0 1 1h4.345a1 1 0 0 0 1-1V31a1 1 0 0 0-1-1M24.001 44C12.972 44 4 35.028 4 24S12.972 4 24.001 4c11.028 0 20 8.972 20 20s-8.972 20-20 20m0-42C11.869 2 2 11.869 2 24s9.869 22 22.001 22c12.13 0 22-9.869 22-22s-9.87-22-22-22"/></symbol>
+<symbol id="i-nat" viewBox="0 0 48 48"><path fill="#8c4fff" fill-rule="evenodd" d="M13.626 35.92v-2.837l1.774 1.419zm-.375-5.7a1.001 1.001 0 0 0-1.625.781v7a1.001 1.001 0 0 0 1.625.782l4.374-3.5a1 1 0 0 0 0-1.562zm24-3.383v-3.922l1.962 1.96zm4.083-2.668-4.376-4.375a1 1 0 0 0-1.706.707v3.375h-7.627v-9.5a1 1 0 0 0-1-1h-7.693v2h6.694v8.5H18.75v2h6.875v8.5h-6.693v2h7.694a1 1 0 0 0 1-1v-9.5h7.625v3.376a1 1 0 0 0 1.708.707l4.374-4.376a1 1 0 0 0 0-1.414m-27.708 2.127v-2.84l1.774 1.42zm-.375-5.701a1 1 0 0 0-1.625.78v7.002a1.001 1.001 0 0 0 1.625.78l4.374-3.5a1 1 0 0 0 0-1.562zm.375-4.8v-2.838l1.774 1.419zm-.375-5.7a1.001 1.001 0 0 0-1.625.781v7a1.001 1.001 0 0 0 1.625.78l4.374-3.5a1 1 0 0 0 0-1.561zM24 44.003C12.971 44.003 4 35.03 4 24S12.973 4 24 4c11.03 0 20.002 8.973 20.002 20 0 11.03-8.973 20.003-20.002 20.003M24 2C11.868 2 2 11.869 2 24c0 12.133 9.869 22.003 22 22.003 12.133 0 22.002-9.87 22.002-22.002S36.133 2 24 2"/></symbol>
+<symbol id="i-igw" viewBox="0 0 48 48"><path fill="#8c4fff" fill-rule="evenodd" d="M33.431 35.178h-1.498V17.502a1 1 0 0 0-.589-.911l-.092-.042c-2.009-.907-4.088-1.846-7.076-1.846-3.123 0-5.415 1.009-7.68 2.134a1 1 0 0 0-.556.896v17.445h-1.463V16.312c2.434-1.98 5.943-3.107 9.71-3.107 3.5 0 6.838.997 9.244 2.748zm-9.245-23.973c-4.425 0-8.569 1.419-11.37 3.895a1 1 0 0 0-.339.749v20.329a1 1 0 0 0 1 1h3.463a1 1 0 0 0 1-1V18.356c1.92-.927 3.78-1.653 6.236-1.653 2.335 0 4.033.675 5.757 1.446v18.029a1 1 0 0 0 1 1h3.498a1 1 0 0 0 1-1v-20.72c0-.304-.139-.592-.378-.783-2.774-2.205-6.735-3.47-10.867-3.47m-.232 32.704C12.952 43.909 4 34.957 4 23.954S12.952 4 23.954 4C34.957 4 43.91 12.95 43.91 23.954c0 11.003-8.952 19.955-19.955 19.955m0-41.91C11.848 2 2 11.85 2 23.955c0 12.107 9.85 21.955 21.955 21.955 12.106 0 21.955-9.848 21.955-21.955C45.91 11.849 36.06 2 23.954 2"/></symbol>
+<symbol id="i-ec2" viewBox="0 0 48 48"><path fill="#ed7100" fill-rule="evenodd" d="M9 39h30V9H9zm37-26v-2h-5V8a1 1 0 0 0-1-1h-3V2h-2v5h-4V2h-2v5h-4V2h-2v5h-4V2h-2v5h-4V2h-2v5H8a1 1 0 0 0-1 1v3H2v2h5v4H2v2h5v4H2v2h5v4H2v2h5v4H2v2h5v3a1 1 0 0 0 1 1h3v5h2v-5h4v5h2v-5h4v5h2v-5h4v5h2v-5h4v5h2v-5h3a1 1 0 0 0 1-1v-3h5v-2h-5v-4h5v-2h-5v-4h5v-2h-5v-4h5v-2h-5v-4z"/></symbol>
+<symbol id="i-spot" viewBox="0 0 48 48"><path fill="#ed7100" fill-rule="evenodd" d="M3.675 24.96H2v-2h1.675a20.1 20.1 0 0 1 3.806-10.899L9.1 13.232a18.15 18.15 0 0 0-3.425 9.728h1.596v2H5.675a18.15 18.15 0 0 0 3.426 9.729L7.48 35.86a20.13 20.13 0 0 1-3.805-10.9m32.186 15.48c-3.204 2.321-6.955 3.617-10.901 3.806v1.616h-2v-1.616c-3.944-.189-7.695-1.485-10.899-3.806l1.172-1.619a18.14 18.14 0 0 0 9.727 3.425v-1.597h2v1.597a18.14 18.14 0 0 0 9.729-3.425zm-23.8-32.959c3.204-2.321 6.955-3.617 10.899-3.807V2h2v1.674c3.946.19 7.697 1.486 10.901 3.807L34.689 9.1a18.15 18.15 0 0 0-9.729-3.426v1.597h-2V5.674A18.14 18.14 0 0 0 13.233 9.1zM45.92 24.96h-1.673c-.19 3.944-1.486 7.696-3.805 10.9l-1.621-1.171a18.15 18.15 0 0 0 3.426-9.729H40.65v-2h1.597a18.14 18.14 0 0 0-3.426-9.728l1.62-1.171c2.32 3.203 3.616 6.955 3.806 10.899h1.673zM35.551 10.956l6.148-6.149 1.414 1.414-6.148 6.149zM12.37 36.965l-6.149 6.148-1.414-1.414 6.149-6.148zm19.325-6.685 11.418 11.419-1.414 1.414L30.28 31.694zM16.226 17.64 4.807 6.221l1.414-1.414L17.64 16.226zm17.275 5.32v-8.541H24.96v2.485h-2v-3.077a1.41 1.41 0 0 1 1.408-1.408h9.725a1.41 1.41 0 0 1 1.408 1.408v9.725a1.41 1.41 0 0 1-1.408 1.408h-3.106v-2zm-19.081 2v8.541h8.54v-2.514h2v3.106a1.41 1.41 0 0 1-1.408 1.408h-9.724a1.41 1.41 0 0 1-1.408-1.408v-9.725a1.41 1.41 0 0 1 1.408-1.408h3.105v2zm5.27 3.271h8.541V19.69H19.69zm10.541.348v-9.238c0-.91-.742-1.652-1.652-1.652h-9.238c-.91 0-1.651.742-1.651 1.652v9.238c0 .91.741 1.652 1.651 1.652h9.238c.91 0 1.652-.742 1.652-1.652"/></symbol>
+<symbol id="i-ebs" viewBox="0 0 48 48"><path fill="#7aa116" fill-rule="evenodd" d="M30.009 32.759a5.1 5.1 0 0 1-2.068-.44v-1.034q1.203.407 2.023.407.776 0 1.197-.347t.421-.984q0-1.21-1.527-1.21-.49 0-1.058.066v-.847l2.167-2.354h-3.113v-1.045h4.543v1.001l-2.288 2.244a4 4 0 0 1 .304-.011 2.5 2.5 0 0 1 1.163.269q.52.27.83.765.31.494.31 1.133a2.2 2.2 0 0 1-.352 1.232q-.352.54-1.012.847-.66.308-1.54.308m-7.051-4.488a2.27 2.27 0 0 1 1.32-.418q.703 0 1.04.468.335.467.335 1.435 0 .979-.341 1.458-.341.477-1.045.478a2.25 2.25 0 0 1-1.309-.429zm0 3.839q.32.286.748.445.429.16.891.16.726 0 1.265-.385a2.44 2.44 0 0 0 .825-1.062q.286-.675.286-1.556 0-1.32-.622-2.101-.62-.78-1.666-.781-.506 0-.974.187a2.8 2.8 0 0 0-.852.539l-.121-.561H21.66v7.865h1.298zm-6.155-3.828q.326-.44.996-.44.65 0 1.221.396v2.816q-.584.429-1.232.429-1.31 0-1.309-1.848 0-.913.324-1.353m.6 4.202q.901 0 1.617-.616v.473q0 .858-.374 1.237t-1.199.38q-.814 0-1.837-.341v.924a4.25 4.25 0 0 0 1.923.451q1.338 0 2.061-.726.724-.726.724-2.057v-5.214h-1.1l-.11.506a2.33 2.33 0 0 0-1.661-.671q-.703 0-1.221.363a2.3 2.3 0 0 0-.792 1.006q-.275.645-.275 1.48 0 1.276.611 2.04.61.765 1.633.765M8.069 44h32V15h-32zm33-31h-34a1 1 0 0 0-1 1v31a1 1 0 0 0 1 1h34a1 1 0 0 0 1-1V14a1 1 0 0 0-1-1M13.533 4l20.935.002L38.993 10H9.007zM7 12h34a1 1 0 0 0 .799-1.602L35.765 2.4a1 1 0 0 0-.798-.398L13.035 2a1 1 0 0 0-.798.398l-6.035 8A.999.999 0 0 0 7 12"/></symbol>
+<symbol id="i-users" viewBox="0 0 48 48"><path fill="#242f3e" fill-rule="evenodd" d="M28.639 9.286c0-2.915 2.413-5.286 5.38-5.286s5.378 2.371 5.378 5.286-2.412 5.286-5.378 5.286-5.38-2.371-5.38-5.286m11.524 7.048a11.7 11.7 0 0 0-2.035-1.001c1.97-1.31 3.269-3.531 3.269-6.047 0-4.017-3.31-7.286-7.378-7.286-4.069 0-7.38 3.269-7.38 7.286 0 2.51 1.293 4.728 3.256 6.039a11.9 11.9 0 0 0-3.546 2.1l1.303 1.518A9.77 9.77 0 0 1 34 16.572c1.802 0 3.569.505 5.109 1.461 2.74 1.702 4.538 4.692 4.844 7.967H34v2h11a1 1 0 0 0 1-1c0-4.343-2.236-8.43-5.837-10.666M8.639 9.286C8.639 6.371 11.052 4 14.019 4s5.378 2.371 5.378 5.286-2.412 5.286-5.378 5.286-5.38-2.371-5.38-5.286M14 26H4.046C4.53 20.717 8.81 16.572 14 16.572c1.802 0 3.569.505 5.109 1.461.432.269.849.575 1.24.91l1.303-1.517a11.71 11.71 0 0 0-3.524-2.093c1.97-1.31 3.269-3.531 3.269-6.047 0-4.017-3.31-7.286-7.378-7.286-4.069 0-7.38 3.269-7.38 7.286 0 2.515 1.298 4.737 3.268 6.046C5.302 17.071 2 21.638 2 27a1 1 0 0 0 1 1h11zm.046 18c.484-5.283 4.764-9.428 9.954-9.428 1.802 0 3.569.505 5.109 1.461 2.74 1.702 4.538 4.692 4.844 7.967zm4.593-16.714c0-2.915 2.413-5.286 5.38-5.286s5.378 2.371 5.378 5.286-2.412 5.286-5.378 5.286-5.38-2.371-5.38-5.286m11.524 7.048a11.7 11.7 0 0 0-2.035-1.001c1.97-1.31 3.269-3.531 3.269-6.047 0-4.017-3.31-7.286-7.378-7.286-4.069 0-7.38 3.269-7.38 7.286 0 2.515 1.298 4.737 3.268 6.046C15.302 35.071 12 39.638 12 45a1 1 0 0 0 1 1h22a1 1 0 0 0 1-1c0-4.343-2.236-8.43-5.837-10.666"/></symbol>
+<symbol id="i-g-cloud" viewBox="0 0 40 40"><g fill="none" fill-rule="evenodd"><path fill="#242f3e" d="M0 0h40v40H0z"/><path fill="#fff" d="m28.993 27.995-17.506-.019c-2.366-.002-4.333-1.847-4.475-4.2A6 6 0 0 1 7 23.396c0-3.098 2.091-4.11 3.337-4.438a.5.5 0 0 0 .37-.54 7 7 0 0 1-.048-.823c0-2.464 1.649-5.114 3.756-6.033.944-.413 1.817-.577 2.608-.577 2.253 0 3.844 1.33 4.538 2.047.768.793 1.366 1.805 1.779 3.01a.498.498 0 0 0 .879.128c.588-.82 1.547-1.189 2.44-.932 1.123.321 1.857 1.488 1.961 3.068a.5.5 0 0 0 .407.57C30.222 19.09 33 19.957 33 23.44c0 4.15-3.886 4.542-4.007 4.555m.601-10.02c-.215-1.908-1.194-3.279-2.66-3.697-1.035-.296-2.123-.033-2.945.672-.436-1.014-1.01-1.89-1.709-2.612-2.257-2.333-5.347-2.966-8.266-1.692-2.483 1.084-4.355 4.072-4.355 6.95q0 .261.017.518C8.319 18.574 6 19.875 6 23.397q0 .229.014.441c.174 2.878 2.579 5.135 5.472 5.138l17.548.017C29.084 28.99 34 28.52 34 23.44c0-3.938-2.997-5.126-4.406-5.466"/></g></symbol>
+<symbol id="i-g-vpc" viewBox="0 0 40 40"><g fill="none" fill-rule="evenodd"><path fill="#8c4fff" d="M0 0h40v40H0z"/><path fill="#fff" d="m30.97 21.03-2.943-1.264v10.49c2.545-.353 2.932-2.969 2.948-3.088zm-3.943 9.24V19.76l-3.035 1.272v6.201c.013.054.445 2.767 3.035 3.036m.306-11.723a.5.5 0 0 1 .39.001l3.945 1.692a.5.5 0 0 1 .303.46v6.533c-.183 1.447-1.357 4.063-4.527 4.063-3.075 0-4.254-2.612-4.448-3.994l-.004-6.603c0-.2.12-.383.306-.46zm5.65.637-5.461-2.406-5.53 2.327v7.128c-.001.042-.054 2.868 1.657 4.623.917.941 2.194 1.42 3.795 1.42 1.602 0 2.887-.48 3.819-1.423 1.735-1.758 1.72-4.585 1.72-4.613zM31.98 31.55c-1.127 1.144-2.654 1.725-4.536 1.725-1.884 0-3.404-.58-4.517-1.727-2.005-2.063-1.94-5.197-1.935-5.329v-7.446a.5.5 0 0 1 .305-.46l6.035-2.54a.5.5 0 0 1 .396.003l5.956 2.625c.182.08.299.26.299.457v7.375c.002.125.027 3.255-2.003 5.317m-20.988-7.314h8v1h-8c-2.811 0-4.811-2.016-4.98-5.016A4 4 0 0 1 6 19.841c0-2.509 1.318-4.223 3.817-4.979a8 8 0 0 1-.032-.647c0-2.916 1.577-5.445 4.017-6.445 3.298-1.348 7.042-.894 9.106 1.104a8.2 8.2 0 0 1 1.76 2.485c.609-.45 1.4-.66 2.349-.614 1.78.09 3.149 1.713 3.433 4.007 1.498.124 2.485.883 3.01 2.308l-.937.346c-.428-1.157-1.208-1.673-2.531-1.673a.5.5 0 0 1-.5-.47c-.138-2.338-1.406-3.463-2.526-3.519-.945-.053-1.645.22-2.08.791a.5.5 0 0 1-.472.193.5.5 0 0 1-.395-.323 7.4 7.4 0 0 0-1.807-2.814c-1.788-1.73-5.09-2.099-8.031-.895-2.063.845-3.396 3.011-3.396 5.52 0 .272.035.695.066.958a.5.5 0 0 1-.376.544C8.169 16.29 7 17.678 7 19.841c0 .101-.001.201.009.302.14 2.495 1.703 4.093 3.983 4.093"/></g></symbol>
+<symbol id="i-g-pub" viewBox="0 0 40 40"><g fill="none" fill-rule="evenodd"><path fill="#7aa116" d="M0 0h40v40H0z"/><path fill="#fff" d="M19.536 22.049c1.106 0 2.006.899 2.006 2.005s-.9 2.006-2.006 2.006-2.006-.9-2.006-2.006.9-2.005 2.006-2.005m-.524 4.958v3.494h1v-3.489a3 3 0 0 0 2.53-2.958 3.01 3.01 0 0 0-3.006-3.005 3.01 3.01 0 0 0-3.006 3.005 3.006 3.006 0 0 0 2.482 2.953M10 33.014h19.012V18H10zm4.046-20.53A5.49 5.49 0 0 1 19.529 7a5.49 5.49 0 0 1 5.483 5.484V17H14.046zM29.512 17h-3.5v-4.516A6.49 6.49 0 0 0 19.529 6a6.49 6.49 0 0 0-6.483 6.484V17H9.5a.5.5 0 0 0-.5.5v16.014a.5.5 0 0 0 .5.5h20.012a.5.5 0 0 0 .5-.5V17.5a.5.5 0 0 0-.5-.5"/></g></symbol>
+<symbol id="i-g-priv" viewBox="0 0 40 40"><g fill="none" fill-rule="evenodd"><path fill="#00a4a6" d="M0 0h40v40H0z"/><path fill="#fff" d="M19.536 22.049c1.106 0 2.006.899 2.006 2.005s-.9 2.006-2.006 2.006-2.006-.9-2.006-2.006.9-2.005 2.006-2.005m-.524 4.958v3.494h1v-3.489a3 3 0 0 0 2.53-2.958 3.01 3.01 0 0 0-3.006-3.005 3.01 3.01 0 0 0-3.006 3.005 3.006 3.006 0 0 0 2.482 2.953M10 33.014h19.012V18H10zm4.046-20.53A5.49 5.49 0 0 1 19.529 7a5.49 5.49 0 0 1 5.483 5.484V17H14.046zM29.512 17h-3.5v-4.516A6.49 6.49 0 0 0 19.529 6a6.49 6.49 0 0 0-6.483 6.484V17H9.5a.5.5 0 0 0-.5.5v16.014a.5.5 0 0 0 .5.5h20.012a.5.5 0 0 0 .5-.5V17.5a.5.5 0 0 0-.5-.5"/></g></symbol>
+    </defs>
+<g class="part" data-s="1"><rect class="g-cloud" x="88" y="8" width="804" height="604" rx="4"/><use href="#i-g-cloud" x="88" y="8" width="26" height="26"/><text class="gl" x="122" y="26">AWS Cloud · 서울 리전 (ap-northeast-2)</text></g>
+<g class="part ic" data-s="1"><rect class="hl" x="17" y="171" width="50" height="50" rx="8"/><use href="#i-users" x="22" y="176" width="40" height="40"/><text class="lb" x="42.0" y="234" text-anchor="middle">사용자</text></g>
+<g class="part ic" data-s="5"><rect class="hl" x="115" y="39" width="50" height="50" rx="8"/><use href="#i-route53" x="120" y="44" width="40" height="40"/><text class="lb" x="140.0" y="100" text-anchor="middle">Route 53</text></g>
+<g class="part ic" data-s="5"><rect class="hl" x="195" y="39" width="50" height="50" rx="8"/><use href="#i-acm" x="200" y="44" width="40" height="40"/><text class="lb" x="220.0" y="100" text-anchor="middle">ACM</text></g>
+<g class="part ic" data-s="1"><rect class="hl" x="515" y="39" width="50" height="50" rx="8"/><use href="#i-ecr" x="520" y="44" width="40" height="40"/><text class="lb" x="540.0" y="100" text-anchor="middle">ECR</text></g>
+<g class="part ic" data-s="4"><rect class="hl" x="615" y="39" width="50" height="50" rx="8"/><use href="#i-cw" x="620" y="44" width="40" height="40"/><text class="lb" x="640.0" y="100" text-anchor="middle">CloudWatch</text></g>
+<g class="part ic" data-s="5"><rect class="hl" x="715" y="39" width="50" height="50" rx="8"/><use href="#i-sm" x="720" y="44" width="40" height="40"/><text class="lb" x="740.0" y="100" text-anchor="middle">Secrets Manager</text></g>
+<g class="part" data-s="1"><rect class="g-vpc" x="104" y="118" width="772" height="482" rx="2"/><use href="#i-g-vpc" x="104" y="118" width="24" height="24"/><text class="gl" x="134" y="135">VPC 10.0.0.0/16</text></g>
+<g class="part" data-s="1"><rect class="g-pub" x="124" y="148" width="732" height="96" rx="2"/><use href="#i-g-pub" x="124" y="148" width="20" height="20"/><text class="gl" x="150" y="163">Public subnet × 2 (2a / 2c)</text></g>
+<g class="part ic" data-s="1"><rect class="hl" x="85" y="177" width="40" height="40" rx="8"/><use href="#i-igw" x="90" y="182" width="30" height="30"/></g>
+<g class="part ic" data-s="1"><rect class="hl" x="395" y="169" width="52" height="52" rx="8"/><use href="#i-alb" x="400" y="174" width="42" height="42"/><text class="lb" x="450" y="192" text-anchor="start">ALB</text><text class="sb" x="450" y="206" text-anchor="start">Gateway API</text></g>
+<g class="part ic" data-s="1"><rect class="hl" x="575" y="175" width="46" height="46" rx="8"/><use href="#i-nat" x="580" y="180" width="36" height="36"/><text class="lb" x="598.0" y="232" text-anchor="middle">NAT Gateway</text></g>
+<g class="part ic" data-s="1"><rect class="hl" x="775" y="175" width="46" height="46" rx="8"/><use href="#i-ec2" x="780" y="180" width="36" height="36"/><text class="lb" x="798.0" y="232" text-anchor="middle">Bastion</text></g>
+<g class="part" data-s="1"><rect class="g-priv" x="124" y="256" width="732" height="244" rx="2"/><use href="#i-g-priv" x="124" y="256" width="20" height="20"/><text class="gl" x="150" y="271">Private subnet × 2 · EKS 노드</text></g>
+<g class="part" data-s="1"><rect class="g-eks" x="140" y="282" width="700" height="210" rx="6"/><use href="#i-eks" x="148" y="288" width="22" height="22"/><text class="gl" x="176" y="304">Amazon EKS 1.36</text></g>
+<g class="part" data-s="1"><rect class="g-ng" x="154" y="316" width="196" height="164" rx="6"/><text class="gs" x="252" y="333" text-anchor="middle">ng-system · 시스템 노드 2대</text></g>
+<g class="part row" data-s="1"><rect x="167" y="342" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="356.5" text-anchor="middle">LB Controller</text></g>
+<g class="part row" data-s="5"><rect x="167" y="368" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="382.5" text-anchor="middle">External Secrets</text></g>
+<g class="part row" data-s="4"><rect x="167" y="394" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="408.5" text-anchor="middle">KEDA</text></g>
+<g class="part row" data-s="4"><rect x="167" y="420" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="434.5" text-anchor="middle">Karpenter</text></g>
+<g class="part row" data-s="1"><rect x="167" y="446" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="460.5" text-anchor="middle">Add-ons 6종</text></g>
+<g class="part" data-s="4"><rect class="g-karp" x="364" y="316" width="462" height="164" rx="6"/><use href="#i-spot" x="370" y="320" width="16" height="16"/><text class="gs" x="818" y="331" text-anchor="end">Karpenter 노드 (Spot)</text></g>
+<g class="part" data-s="1"><rect class="g-ns" x="376" y="338" width="438" height="134" rx="6"/><text class="gs" x="806" y="352" text-anchor="end">namespace: petclinic</text></g>
+<g class="part pod" data-s="1"><rect x="390" y="358" width="120" height="46" rx="6"/><text class="bt" x="450.0" y="378.0" text-anchor="middle">WEB</text><text class="bs" x="450.0" y="394.0" text-anchor="middle">Nginx</text></g>
+<g class="part pod" data-s="1"><rect x="524" y="358" width="120" height="46" rx="6"/><text class="bt" x="584.0" y="378.0" text-anchor="middle">WAS</text><text class="bs" x="584.0" y="394.0" text-anchor="middle">Tomcat 11</text></g>
+<g class="part pod" data-s="1"><rect x="658" y="358" width="120" height="46" rx="6"/><text class="bt" x="718.0" y="378.0" text-anchor="middle">DB</text><text class="bs" x="718.0" y="394.0" text-anchor="middle">MySQL 8.4</text></g>
+<g class="part ic" data-s="2"><rect class="hl" x="781" y="361" width="34" height="34" rx="8"/><use href="#i-ebs" x="786" y="366" width="24" height="24"/></g>
+<g class="part chip" data-s="3"><rect x="394" y="410" width="112" height="18" rx="9"/><text x="450.0" y="423" text-anchor="middle">+ log-agent</text></g>
+<g class="part chip" data-s="4"><rect x="394" y="430" width="112" height="18" rx="9"/><text x="450.0" y="443" text-anchor="middle">KEDA 2~4</text></g>
+<g class="part chip" data-s="3"><rect x="528" y="410" width="112" height="18" rx="9"/><text x="584.0" y="423" text-anchor="middle">Probe 3종</text></g>
+<g class="part chip" data-s="4"><rect x="528" y="430" width="112" height="18" rx="9"/><text x="584.0" y="443" text-anchor="middle">HPA 2~4</text></g>
+<g class="part chip" data-s="2"><rect x="662" y="410" width="112" height="18" rx="9"/><text x="718.0" y="423" text-anchor="middle">StatefulSet</text></g>
+<g class="part chip" data-s="5"><rect x="662" y="430" width="112" height="18" rx="9"/><text x="718.0" y="443" text-anchor="middle">ExternalSecret</text></g>
+<g class="part chip" data-s="2"><rect x="394" y="450" width="70" height="18" rx="9"/><text x="429.0" y="463" text-anchor="middle">Seed Job</text></g>
+<g class="part chip" data-s="3"><rect x="470" y="450" width="66" height="18" rx="9"/><text x="503.0" y="463" text-anchor="middle">CronJob</text></g>
+<g class="part chip" data-s="3"><rect x="542" y="450" width="96" height="18" rx="9"/><text x="590.0" y="463" text-anchor="middle">Quota · PDB</text></g>
+<g class="part chip" data-s="2"><rect x="644" y="450" width="86" height="18" rx="9"/><text x="687.0" y="463" text-anchor="middle">Kustomize</text></g>
+<g class="part" data-s="1"><rect class="g-priv" x="124" y="512" width="732" height="76" rx="2"/><use href="#i-g-priv" x="124" y="512" width="20" height="20"/><text class="gl" x="150" y="527">Private subnet × 2 · DB</text></g>
+<g class="part ic" data-s="2"><rect class="hl" x="655" y="525" width="50" height="50" rx="8"/><use href="#i-rds" x="660" y="530" width="40" height="40"/><text class="lb" x="650" y="555" text-anchor="end">RDS MySQL (prod)</text></g>
+<path class="part flow " data-s="1" d="M64 196 H88" marker-end="url(#ah)"/>
+<path class="part flow " data-s="1" d="M122 196 H396" marker-end="url(#ah)"/>
+<path class="part flow " data-s="1" d="M421 220 V250 H450 V354" marker-end="url(#ah)"/>
+<path class="part flow " data-s="1" d="M510 381 H520" marker-end="url(#ah)"/>
+<path class="part flow " data-s="1" d="M644 381 H654" marker-end="url(#ah)"/>
+<path class="part flow sub" data-s="2" d="M812 378 H846 V548 H704" marker-end="url(#ah)"/>
+<path class="part flow faint" data-s="1" d="M540 106 V280" marker-end="url(#ah)"/>
+<path class="part flow sub" data-s="5" d="M42 172 V64 H116" marker-end="url(#ah)"/>
+<path class="part flow sub" data-s="5" d="M244 64 H421 V170" marker-end="url(#ah)"/>
+<path class="part flow sub" data-s="4" d="M436 172 V140 H640 V106" marker-end="url(#ah)"/>
+<path class="part flow sub" data-s="5" d="M740 106 V312" marker-end="url(#ah)"/>
+<path class="part flow sub" data-s="4" d="M337 431 H362" marker-end="url(#ah)"/>
+<path id="p-main" d="M62 196 H421 V250 H450 V381 H718" fill="none" stroke="none"/>
+<g class="part" data-s="1"><circle class="pkt" r="4" opacity="1"><animateMotion dur="3.3s" begin="0.0s" repeatCount="indefinite"><mpath href="#p-main"/></animateMotion></circle><circle class="pkt" r="4" opacity="0"><set attributeName="opacity" to="1" begin="1.1s"/><animateMotion dur="3.3s" begin="1.1s" repeatCount="indefinite"><mpath href="#p-main"/></animateMotion></circle><circle class="pkt" r="4" opacity="0"><set attributeName="opacity" to="1" begin="2.2s"/><animateMotion dur="3.3s" begin="2.2s" repeatCount="indefinite"><mpath href="#p-main"/></animateMotion></circle></g>
+  </svg>
+  <div class="legend">
+    <span><i style="background:var(--accent)"></i>이 단계에서 추가</span>
+    <span><i style="border:1px solid #8d99a8"></i>이전 단계까지 구성</span>
+    <span><i style="border-top:2px solid #545b64;height:0;border-radius:0"></i>요청 흐름</span>
+    <span><i style="border-top:2px dashed #545b64;height:0;border-radius:0"></i>연동 · 관리</span>
+  </div>
+</section>
 
-      <!-- 외부 -->
-      <g class="n ext" data-s="p"><rect x="20" y="10" width="150" height="34" rx="8"/><text class="tt" x="95" y="32" text-anchor="middle">Route 53 · ACM</text></g>
-      <g class="n" data-s="1"><rect x="400" y="10" width="100" height="34" rx="8"/><text class="tt" x="450" y="32" text-anchor="middle">사용자</text></g>
-      <g class="n" data-s="1"><rect x="760" y="10" width="130" height="34" rx="8"/><text class="tt" x="825" y="32" text-anchor="middle">ECR</text></g>
-      <g class="n" data-s="4"><rect x="770" y="180" width="120" height="44" rx="8"/><text class="tt" x="830" y="198" text-anchor="middle">CloudWatch</text><text class="ts" x="830" y="215" text-anchor="middle">ALB 요청 수</text></g>
-      <g class="n ext" data-s="p"><rect x="770" y="250" width="120" height="44" rx="8"/><text class="tt" x="830" y="268" text-anchor="middle">Secrets Mgr</text><text class="ts" x="830" y="285" text-anchor="middle">DB 자격 증명</text></g>
+<section aria-live="polite">
 
-      <!-- VPC / 서브넷 -->
-      <g data-s="1"><rect class="box" x="10" y="60" width="740" height="490" rx="14"/><text class="lbl" x="24" y="78">VPC 10.0.0.0/16 · ap-northeast-2</text></g>
-      <g data-s="1"><rect class="box" x="25" y="84" width="710" height="70" rx="10"/><text class="lbl" x="40" y="148">Public subnet ×2</text></g>
-      <g class="n" data-s="1"><rect x="60" y="98" width="130" height="40" rx="8"/><text class="tt" x="125" y="123" text-anchor="middle">NAT GW</text></g>
-      <g class="n" data-s="1"><rect x="380" y="98" width="140" height="44" rx="8"/><text class="tt" x="450" y="116" text-anchor="middle">ALB</text><text class="ts" x="450" y="133" text-anchor="middle">Gateway API</text></g>
-      <g class="n" data-s="1"><rect x="600" y="98" width="120" height="40" rx="8"/><text class="tt" x="660" y="123" text-anchor="middle">Bastion</text></g>
+<article class="slide" data-stage="all" data-tab="소개">
+  <p class="step">소개</p>
+  <h1>Spring PetClinic을 Amazon EKS에<br>단계적으로 배포한 프로젝트</h1>
+  <p>Nginx(WEB)와 Tomcat(WAS)을 컨테이너 이미지로 만들고, MySQL과 함께 3-Tier로 EKS에 올렸습니다. 처음부터 전부 구성하지 않고 가장 단순한 형태를 먼저 띄운 다음, 하루에 한 주제씩 기능을 더했습니다.</p>
+  <table>
+    <tr><th>기간</th><td>2026년 10월</td></tr>
+    <tr><th>형태</th><td>개인 프로젝트</td></tr>
+    <tr><th>주요 기술</th><td>EKS, Gateway API, Kustomize, StatefulSet, RDS, HPA, KEDA, Karpenter, External Secrets, Route 53, ACM</td></tr>
+  </table>
+  <h3>진행 순서</h3>
+  <table>
+    <tr><th>Stage 1</th><td>3-Tier 기본 구성</td></tr>
+    <tr><th>Stage 2</th><td>DB 영속성, 최소 권한, dev/prod 분리</td></tr>
+    <tr><th>Stage 3</th><td>파드 안정성과 자원 관리</td></tr>
+    <tr><th>Stage 4</th><td>오토스케일링 (HPA, KEDA, Karpenter)</td></tr>
+    <tr><th>Stage 5</th><td>Secrets Manager, Route 53 + HTTPS</td></tr>
+  </table>
+</article>
 
-      <!-- EKS -->
-      <g data-s="1"><rect class="box" x="25" y="170" width="710" height="290" rx="12"/><text class="lbl" x="40" y="188">EKS 1.36</text></g>
-      <g data-s="1"><rect class="box" x="40" y="196" width="200" height="250" rx="10"/><text class="lbl" x="140" y="214" text-anchor="middle">ng-system ×2</text></g>
-      <g class="n" data-s="1"><rect x="55" y="226" width="170" height="36" rx="8"/><text class="tt" x="140" y="249" text-anchor="middle">LB Controller</text></g>
-      <g class="n" data-s="4"><rect x="55" y="274" width="170" height="36" rx="8"/><text class="tt" x="140" y="297" text-anchor="middle">KEDA</text></g>
-      <g class="n" data-s="4"><rect x="55" y="322" width="170" height="36" rx="8"/><text class="tt" x="140" y="345" text-anchor="middle">Karpenter</text></g>
-      <g class="n" data-s="1"><rect x="55" y="370" width="170" height="36" rx="8"/><text class="tt" x="140" y="393" text-anchor="middle">Add-ons ×6</text></g>
-      <g class="c" data-s="4"><rect x="60" y="416" width="160" height="20" rx="10"/><text x="140" y="430" text-anchor="middle">Taint: 시스템 전용</text></g>
+<article class="slide" data-stage="all" data-tab="전체 구조">
+  <p class="step">전체 구조</p>
+  <h2>최종 아키텍처</h2>
+  <p>사용자 요청은 Route 53 → ALB(HTTPS) → WEB → WAS → DB 순서로 흐릅니다.</p>
+  <table>
+    <tr><th>네트워크</th><td>VPC 1개, 가용 영역 2개. Public / Private(노드) / Private(DB) 서브넷 각 2개</td></tr>
+    <tr><th>노드</th><td>시스템 컨트롤러는 관리형 노드그룹 <code>ng-system</code>, 애플리케이션은 Karpenter가 만든 Spot 노드</td></tr>
+    <tr><th>환경</th><td>Kustomize <code>dev</code>(클러스터 내부 MySQL)와 <code>prod</code>(RDS). WAS 설정은 두 환경이 같음</td></tr>
+    <tr><th>확장</th><td>WAS는 CPU(HPA), WEB은 ALB 요청 수(KEDA), 노드는 대기 중인 파드(Karpenter)</td></tr>
+    <tr><th>보안</th><td>DB 계정 최소 권한, 비밀번호는 Secrets Manager, AWS 권한은 Pod Identity / IRSA로 컨트롤러별 분리</td></tr>
+  </table>
+  <h3>진행하면서 지킨 원칙</h3>
+  <ul>
+    <li>한 번에 하나씩 추가하고, 추가할 때마다 동작을 확인한다.</li>
+    <li>설정과 비밀번호는 이미지에 넣지 않고 실행 시점에 주입한다.</li>
+    <li>권한은 필요한 만큼만 준다.</li>
+  </ul>
+</article>
 
-      <g data-s="4"><rect class="box dash" x="255" y="196" width="466" height="250" rx="10"/><text class="lbl" x="710" y="212" text-anchor="end">Karpenter NodePool (Spot + On-Demand)</text></g>
-      <g data-s="1"><rect class="box" x="270" y="218" width="436" height="216" rx="10"/><text class="lbl" x="696" y="236" text-anchor="end">namespace petclinic</text></g>
+<article class="slide" data-stage="1" data-tab="Stage 1">
+  <p class="step">Stage 1</p>
+  <h2>3-Tier 기본 구성</h2>
+  <p>부가 기능 없이 ALB → WEB → WAS → DB가 연결되는 것부터 확인했습니다.</p>
+  <h3>구성</h3>
+  <ul>
+    <li>콘솔에서 VPC, 서브넷 6개, IGW, NAT Gateway, Bastion 생성 후 <code>eksctl</code>로 클러스터 생성</li>
+    <li>WAS 이미지: Maven(<code>-P MySQL</code>) 빌드 후 Tomcat 11 이미지로 복사하는 멀티 스테이지 빌드</li>
+    <li>외부 노출: Ingress 대신 Gateway API (GatewayClass, Gateway, HTTPRoute)</li>
+    <li>ALB 설정은 <code>LoadBalancerConfiguration</code>, 대상 그룹 설정은 <code>TargetGroupConfiguration</code>으로 분리</li>
+  </ul>
+  <div class="issue"><b>문제 → 해결</b><br>
+    WAS가 DB에 붙지 않았던 원인이 세 가지였습니다.<br>
+    1) <code>catalina.sh</code>가 <code>JAVA_OPTS</code>를 셸에서 다시 해석해 <code>&amp;</code>, <code>#</code>이 깨짐 → <code>JDK_JAVA_OPTIONS</code> 사용<br>
+    2) 설정값을 바꿀 방법이 필요 → <code>data-access.properties</code>를 Secret으로 만들어 <code>subPath</code>로 교체<br>
+    3) Maven 리소스 필터링이 XML의 <code>${jdbc.url}</code>까지 빌드 시점 값으로 바꿔 둠 → 빌드 후 플레이스홀더 복원
+  </div>
+</article>
 
-      <!-- 파드 -->
-      <g class="n" data-s="1"><rect x="290" y="246" width="120" height="84" rx="8"/><text class="tt" x="350" y="266" text-anchor="middle">WEB</text><text class="ts" x="350" y="282" text-anchor="middle">nginx :80</text></g>
-      <g class="c" data-s="3"><rect x="298" y="290" width="104" height="16" rx="8"/><text x="350" y="302" text-anchor="middle">+ log-agent</text></g>
-      <g class="c" data-s="4"><rect x="298" y="310" width="104" height="16" rx="8"/><text x="350" y="322" text-anchor="middle">KEDA 2~4</text></g>
+<article class="slide" data-stage="2" data-tab="Stage 2">
+  <p class="step">Stage 2</p>
+  <h2>DB 영속성, 최소 권한, 환경 분리</h2>
+  <ul>
+    <li><b>StatefulSet + EBS gp3</b>: DB 파드를 지워도 같은 이름, 같은 볼륨으로 다시 붙습니다. 볼륨은 파드가 배치될 AZ에 만들어지도록 <code>WaitForFirstConsumer</code> 사용</li>
+    <li><b>Seed Job</b>: 테이블 생성과 초기 데이터는 관리자 계정으로 한 번만 실행. 애플리케이션 계정은 <code>SELECT, INSERT, UPDATE, DELETE</code>만 허용</li>
+    <li><b>Kustomize</b>: 공통은 <code>base</code>, DB만 <code>overlays/dev</code>(StatefulSet)와 <code>overlays/prod</code>(RDS)로 분리</li>
+    <li><b>ExternalName Service</b>: 서비스 이름 <code>petclinic-db</code>는 그대로 두고 prod에서는 RDS 주소를 가리키게 함</li>
+  </ul>
+  <div class="note"><b>확인한 것</b><br>DB 파드를 삭제해도 데이터 유지 · 애플리케이션 계정의 <code>DROP TABLE</code> 거부 · WAS 수정 없이 RDS로 전환</div>
+</article>
 
-      <g class="n" data-s="1"><rect x="430" y="246" width="120" height="84" rx="8"/><text class="tt" x="490" y="266" text-anchor="middle">WAS</text><text class="ts" x="490" y="282" text-anchor="middle">Tomcat 11 :8080</text></g>
-      <g class="c" data-s="3"><rect x="438" y="290" width="104" height="16" rx="8"/><text x="490" y="302" text-anchor="middle">Probe ×3</text></g>
-      <g class="c" data-s="4"><rect x="438" y="310" width="104" height="16" rx="8"/><text x="490" y="322" text-anchor="middle">HPA 2~4</text></g>
+<article class="slide" data-stage="3" data-tab="Stage 3">
+  <p class="step">Stage 3</p>
+  <h2>파드 안정성과 자원 관리</h2>
+  <table>
+    <tr><th>Probe</th><td>startup, liveness는 DB를 거치지 않는 정적 리소스로, readiness는 매번 DB를 조회하는 <code>/owners</code>로 검사. <code>/vets</code>는 캐시 때문에 DB가 멈춰도 200을 반환해서 쓰지 않음</td></tr>
+    <tr><th>자원</th><td>requests / limits, JVM 힙 비율(<code>MaxRAMPercentage=75</code>), LimitRange, ResourceQuota</td></tr>
+    <tr><th>가용성</th><td>replicas 2, AZ·노드 분산, 롤링 업데이트 <code>maxUnavailable: 0</code>, PDB <code>minAvailable: 1</code></td></tr>
+    <tr><th>로그</th><td>WEB 파드에 네이티브 사이드카(<code>initContainers</code> + <code>restartPolicy: Always</code>)로 접속 로그 수집</td></tr>
+    <tr><th>배치 작업</th><td>5분마다 DB 현황을 집계하는 CronJob (중복 실행 금지, 실행 시간 제한)</td></tr>
+  </table>
+  <div class="note"><b>확인한 것</b><br>DB를 멈추면 WAS는 트래픽에서 빠지지만 재시작하지 않음 · 노드를 비우는 동안에도 응답 유지 · 파드가 1개일 때는 PDB가 drain을 막음</div>
+</article>
 
-      <g class="n" data-s="1"><rect x="570" y="246" width="120" height="84" rx="8"/><text class="tt" x="630" y="266" text-anchor="middle">DB</text><text class="ts" x="630" y="282" text-anchor="middle">MySQL 8.4</text></g>
-      <g class="c" data-s="2"><rect x="578" y="290" width="104" height="16" rx="8"/><text x="630" y="302" text-anchor="middle">StatefulSet</text></g>
+<article class="slide" data-stage="4" data-tab="Stage 4">
+  <p class="step">Stage 4</p>
+  <h2>오토스케일링</h2>
+  <table>
+    <tr><th>WAS</th><td>HPA. CPU 사용률 50%(requests 기준), 2~4개</td></tr>
+    <tr><th>WEB</th><td>KEDA. CloudWatch의 ALB 요청 수(파드당 분당 60건) + 평일 업무시간 최소 3개</td></tr>
+    <tr><th>노드</th><td>Karpenter. 대기 중인 파드에 맞는 인스턴스를 Spot 우선으로 생성하고, 남는 노드는 한 대씩 정리</td></tr>
+  </table>
+  <h3>함께 바꾼 것</h3>
+  <ul>
+    <li><code>ng-system</code>에 Taint를 걸어 시스템 컨트롤러와 애플리케이션 노드를 분리</li>
+    <li>HPA와 KEDA가 파드 수를 관리하므로 Deployment에서 <code>replicas</code> 제거</li>
+    <li>KEDA의 CloudWatch 권한은 EKS Pod Identity로 필요한 동작 3개만 허용</li>
+  </ul>
+  <div class="note"><b>관찰</b><br>HPA는 수십 초 안에 반응했지만 KEDA는 CloudWatch 지표 지연 때문에 2~3분이 걸렸습니다. 예측 가능한 트래픽은 cron 트리거로 미리 늘려 두는 방식이 맞다고 판단했습니다.</div>
+</article>
 
-      <g class="n" data-s="3"><rect x="290" y="344" width="120" height="36" rx="8"/><text class="tt" x="350" y="367" text-anchor="middle">CronJob</text></g>
-      <g class="n" data-s="2"><rect x="430" y="344" width="120" height="36" rx="8"/><text class="tt" x="490" y="367" text-anchor="middle">Seed Job</text></g>
-      <g class="n" data-s="2"><rect x="570" y="344" width="120" height="36" rx="8"/><text class="tt" x="630" y="367" text-anchor="middle">PVC · EBS</text></g>
+<article class="slide" data-stage="5" data-tab="Stage 5">
+  <p class="step">Stage 5</p>
+  <h2>Secrets Manager, Route 53 + HTTPS</h2>
+  <h3>Secrets Manager + External Secrets Operator</h3>
+  <ul>
+    <li>Git에 평문으로 있던 DB 비밀번호를 Secrets Manager(<code>petclinic/dev/db</code>)로 이동</li>
+    <li>External Secrets가 값을 읽어 기존과 같은 이름의 Secret을 만들어 주므로 파드 매니페스트는 그대로</li>
+    <li>WAS 설정 파일은 템플릿으로 조립하고 비밀번호 한 줄만 Secrets Manager 값으로 채움</li>
+    <li>읽기 권한은 Pod Identity로 <code>petclinic/*</code> 비밀에만 허용, 이후 애플리케이션 비밀번호 교체까지 진행</li>
+  </ul>
+  <h3>Route 53 + ACM + HTTPS</h3>
+  <ul>
+    <li>가비아에서 구입한 <code>zzgg2.cloud</code>의 네임서버를 Route 53으로 위임</li>
+    <li>ACM 인증서(<code>zzgg2.cloud</code>, <code>*.zzgg2.cloud</code>)를 DNS 검증으로 발급</li>
+    <li>Gateway에 HTTPS 리스너 추가, HTTP는 HTTPRoute 리다이렉트(301)로 HTTPS로 이동</li>
+    <li>Route 53 Alias 레코드로 도메인을 ALB에 연결. Gateway는 그대로 두어 ALB 주소 유지</li>
+  </ul>
+  <div class="issue"><b>문제 → 해결</b><br>Secret을 External Secrets로 옮길 때 잘못된 값이 들어가 새 WAS가 기동하지 못했습니다. 기존 WAS는 예전 값으로 계속 동작하고 있었고(<code>maxUnavailable: 0</code>), 실행 중인 파드에서 원래 값을 확인해 복구했습니다. <code>subPath</code>로 마운트한 파일은 Secret이 바뀌어도 갱신되지 않아 재시작이 필요하다는 것도 이때 확인했습니다.</div>
+</article>
 
-      <g class="c" data-s="3"><rect x="290" y="394" width="190" height="24" rx="12"/><text x="385" y="410" text-anchor="middle">LimitRange · ResourceQuota</text></g>
-      <g class="c" data-s="3"><rect x="490" y="394" width="90" height="24" rx="12"/><text x="535" y="410" text-anchor="middle">PDB</text></g>
-      <g class="c" data-s="2"><rect x="590" y="394" width="100" height="24" rx="12"/><text x="640" y="410" text-anchor="middle">Kustomize</text></g>
+<article class="slide" data-stage="all" data-tab="정리">
+  <p class="step">정리</p>
+  <h2>정리</h2>
+  <h3>배운 점</h3>
+  <ul>
+    <li>파드가 Running이어도 서비스가 되는 상태는 아닐 수 있습니다. Probe를 어떻게 나누느냐에 따라 장애 범위가 달라졌습니다.</li>
+    <li>설정을 실행 시점에 주입하려면 빌드 도구가 어떤 값을 미리 넣어 두는지 결과물을 직접 열어 봐야 했습니다.</li>
+    <li>스케일링 기준은 지표가 들어오는 시점까지 고려해야 했습니다.</li>
+  </ul>
+  <h3>다음에 해 보고 싶은 것</h3>
+  <ul>
+    <li>Argo CD로 배포 자동화 (지금은 Bastion에서 직접 적용)</li>
+    <li>Flyway로 스키마 변경 이력 관리</li>
+    <li>Prometheus, Grafana로 지표 수집과 대시보드 구성</li>
+  </ul>
+  <p style="margin-top:18px"><a href="https://github.com/ZZGG2/petclinic-k8s-project" target="_blank" rel="noopener">github.com/ZZGG2/petclinic-k8s-project</a></p>
+</article>
 
-      <!-- DB 서브넷 -->
-      <g data-s="1"><rect class="box" x="25" y="476" width="710" height="60" rx="10"/><text class="lbl" x="40" y="510">Private DB subnet ×2</text></g>
-      <g class="n" data-s="2"><rect x="560" y="486" width="160" height="40" rx="8"/><text class="tt" x="640" y="511" text-anchor="middle">RDS (prod)</text></g>
-
-      <!-- 흐름 -->
-      <path class="flow" data-s="1" marker-end="url(#ah)" d="M450 44 V96"/>
-      <path class="flow" data-s="1" marker-end="url(#ah)" d="M450 142 V160 H350 V244"/>
-      <path class="flow" data-s="1" marker-end="url(#ah)" d="M410 288 H428"/>
-      <path class="flow" data-s="1" marker-end="url(#ah)" d="M550 288 H568"/>
-      <path id="p-main" d="M450 44 V142 V160 H350 V288 H630" fill="none" stroke="none"/>
-      <path class="flow sub" data-s="2" marker-end="url(#ah)" d="M630 330 V342"/>
-      <path class="flow sub" data-s="2" marker-end="url(#ah)" d="M490 344 V337 H590 V332"/>
-      <path class="flow sub" data-s="2" marker-end="url(#ah)" d="M690 300 H712 V484"/>
-      <path class="flow sub" data-s="4" marker-end="url(#ah)" d="M500 98 V92 H830 V178"/>
-      <path class="flow sub" data-s="4" marker-end="url(#ah)" d="M770 202 H748 V188 H232 V292 H227"/>
-      <path class="flow sub" data-s="4" marker-end="url(#ah)" d="M225 340 H253"/>
-      <path class="flow sub" data-s="p" marker-end="url(#ah)" d="M770 272 H723"/>
-      <path class="flow sub" data-s="p" marker-end="url(#ah)" d="M170 27 H398"/>
-
-      <g data-s="1">
-        <circle class="pkt" r="4.5"><animateMotion dur="3.2s" repeatCount="indefinite"><mpath href="#p-main"/></animateMotion></circle>
-        <circle class="pkt" r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="1.07s"/><animateMotion dur="3.2s" begin="1.07s" repeatCount="indefinite"><mpath href="#p-main"/></animateMotion></circle>
-        <circle class="pkt" r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="2.13s"/><animateMotion dur="3.2s" begin="2.13s" repeatCount="indefinite"><mpath href="#p-main"/></animateMotion></circle>
-      </g>
-    </svg>
-    <div class="legend">
-      <span><i style="background:var(--accent)"></i>이번 단계에서 추가</span>
-      <span><i style="background:var(--node);border:1px solid var(--line)"></i>이전 단계까지 구성</span>
-      <span><i style="border:1px dashed var(--line)"></i>예정 / 동적 생성</span>
-    </div>
-  </section>
-
-  <!-- ================= 슬라이드 ================= -->
-  <section class="panel" aria-live="polite">
-
-    <article class="slide" data-stage="all" data-time="1분">
-      <div class="kicker">Docker &amp; Kubernetes 개인 프로젝트</div>
-      <h1>Spring PetClinic 3-Tier를<br>Amazon EKS 위에 단계적으로 구축</h1>
-      <p class="lead">가장 단순한 3-Tier를 먼저 개통하고, 하루에 한 주제씩 쌓아 올린 과정입니다.</p>
-      <div class="chips">
-        <span class="chip">EKS 1.36</span><span class="chip">Gateway API</span><span class="chip">Kustomize</span>
-        <span class="chip">StatefulSet · EBS</span><span class="chip">RDS</span><span class="chip">HPA</span>
-        <span class="chip">KEDA</span><span class="chip">Karpenter</span>
-      </div>
-      <div class="cover-btns">
-        <button class="btn primary" data-go="1">발표 시작 →</button>
-        <a class="btn" href="/petclinic/">PetClinic 열기</a>
-        <a class="btn" href="https://github.com/ZZGG2/petclinic-k8s-project" target="_blank" rel="noopener">GitHub 레포</a>
-      </div>
-      <h3>발표 순서</h3>
-      <table>
-        <tr><th>Stage 1</th><td>3-Tier MVP 개통 · Gateway API</td></tr>
-        <tr><th>Stage 2</th><td>DB 영속성 · 최소 권한 · dev/prod 분리</td></tr>
-        <tr><th>Stage 3</th><td>파드 안정성 · 자원 관리 · 가용성</td></tr>
-        <tr><th>Stage 4</th><td>오토스케일링 3단계 (HPA → KEDA → Karpenter)</td></tr>
-        <tr><th>Stage 5</th><td>통합 시연 · 회고</td></tr>
-      </table>
-    </article>
-
-    <article class="slide" data-stage="all" data-time="1분 30초">
-      <div class="kicker">OVERVIEW</div>
-      <h2>최종 아키텍처</h2>
-      <p class="lead">요청 흐름: 사용자 → ALB → WEB(Nginx) → WAS(Tomcat) → DB</p>
-      <ul>
-        <li><b>네트워크</b> — VPC 1개, AZ 2개, Public / Private Node / Private DB 서브넷</li>
-        <li><b>노드</b> — 시스템 컨트롤러는 <code>ng-system</code>, 앱은 Karpenter가 필요할 때 생성</li>
-        <li><b>환경</b> — Kustomize <code>dev</code>(StatefulSet) / <code>prod</code>(RDS), WAS 설정은 동일</li>
-        <li><b>확장</b> — WAS는 CPU(HPA), WEB은 요청 수(KEDA), 노드는 Pending 파드(Karpenter)</li>
-      </ul>
-      <h3>설계 원칙</h3>
-      <ul>
-        <li>한 번에 하나씩 추가하고, 추가할 때마다 <b>동작을 눈으로 확인</b></li>
-        <li>설정은 이미지에 굽지 않고 <b>런타임에 주입</b></li>
-        <li>권한은 필요한 만큼만 (DB 계정 · IAM 모두)</li>
-      </ul>
-    </article>
-
-    <article class="slide" data-stage="1" data-time="2분 30초">
-      <div class="kicker">STAGE 1</div>
-      <h2>가장 단순한 3-Tier 개통</h2>
-      <p class="lead">부가 기능 없이 ALB → WEB → WAS → DB가 연결되는 것만 먼저 성공시킴</p>
-      <h3>구성</h3>
-      <ul>
-        <li>콘솔로 VPC · 서브넷 6개 · IGW · NAT · Bastion, <code>eksctl</code>로 EKS 생성</li>
-        <li>WAS: Maven <code>-P MySQL</code> → Tomcat 11 <b>멀티 스테이지 빌드</b></li>
-        <li>외부 노출: Ingress 대신 <b>Gateway API</b> (GatewayClass → Gateway → HTTPRoute)</li>
-        <li>ALB 설정은 <code>LoadBalancerConfiguration</code> · <code>TargetGroupConfiguration</code>으로 분리</li>
-      </ul>
-      <div class="callout"><b>트러블슈팅 — 원인이 세 겹</b>
-        <ol style="margin:6px 0 0;padding-left:18px">
-          <li><code>catalina.sh</code>의 eval이 <code>&amp;</code>, <code>#</code>을 셸 문법으로 해석 → <code>JDK_JAVA_OPTIONS</code></li>
-          <li>Running인데 404 → Secret + <code>subPath</code>로 설정 파일 주입</li>
-          <li>Maven 필터링이 XML의 <code>${jdbc.url}</code>까지 치환 → 빌드 후 플레이스홀더 복원</li>
-        </ol>
-      </div>
-    </article>
-
-    <article class="slide" data-stage="2" data-time="2분 30초">
-      <div class="kicker">STAGE 2</div>
-      <h2>DB 영속성 · 최소 권한 · 환경 분리</h2>
-      <h3>추가한 것</h3>
-      <ul>
-        <li><b>StatefulSet + EBS gp3</b> — 파드를 지워도 같은 이름, 같은 디스크로 복구 (<code>WaitForFirstConsumer</code>)</li>
-        <li><b>Seed Job</b> — 스키마는 관리자 계정이 1회 적용, 앱 계정은 <code>SELECT · INSERT · UPDATE · DELETE</code>만</li>
-        <li><b>Kustomize</b> — <code>base</code> + <code>overlays/dev</code>(StatefulSet) / <code>overlays/prod</code>(RDS)</li>
-        <li><b>ExternalName</b> — 서비스 이름 <code>petclinic-db</code>는 그대로, 가리키는 대상만 RDS로</li>
-      </ul>
-      <div class="demo"><b>확인한 것</b> — DB 파드 삭제 후 데이터 유지 · 앱 계정 <code>DROP TABLE</code> 거부 · WAS 수정 없이 RDS 전환</div>
-    </article>
-
-    <article class="slide" data-stage="3" data-time="2분 30초">
-      <div class="kicker">STAGE 3</div>
-      <h2>잘 버티는 파드 만들기</h2>
-      <table>
-        <tr><th>Probe</th><td>startup · liveness는 DB를 거치지 않는 정적 경로, readiness는 매번 DB를 조회하는 <code>/owners</code><br><span style="color:var(--muted)"><code>/vets</code>는 캐시 때문에 DB가 죽어도 200 → 사용 안 함</span></td></tr>
-        <tr><th>자원</th><td>requests · limits + JVM <code>MaxRAMPercentage=75</code>, LimitRange · ResourceQuota</td></tr>
-        <tr><th>가용성</th><td>replicas 2 · AZ/노드 분산 · <code>maxUnavailable 0</code> · PDB <code>minAvailable 1</code></td></tr>
-        <tr><th>로그</th><td>네이티브 Sidecar (<code>initContainers</code> + <code>restartPolicy: Always</code>) + emptyDir</td></tr>
-        <tr><th>배치</th><td>CronJob 5분 주기 DB 리포트 (<code>Forbid</code>, 실행 마감 시간)</td></tr>
-      </table>
-      <div class="demo"><b>확인한 것</b> — DB를 끄면 WAS는 트래픽에서 빠지지만 재시작 0회 · drain 중에도 200 유지 · PDB가 마지막 1개를 지킴</div>
-    </article>
-
-    <article class="slide" data-stage="4" data-time="2분 30초">
-      <div class="kicker">STAGE 4</div>
-      <h2>오토스케일링 3단계</h2>
-      <table>
-        <tr><th>WAS · HPA</th><td>CPU 사용률 50% (requests 기준) · 2~4개 · 축소는 60초 안정화</td></tr>
-        <tr><th>WEB · KEDA</th><td>CloudWatch ALB <code>RequestCount</code> (파드당 분당 60건) + 평일 09~18시 최소 3개</td></tr>
-        <tr><th>노드 · Karpenter</th><td>Pending 파드 → 가장 저렴한 인스턴스 생성 (Spot 우선) · Consolidation · 한 번에 1대씩 정리</td></tr>
-      </table>
-      <h3>함께 한 설정</h3>
-      <ul>
-        <li><code>ng-system</code>에 Taint → 시스템 컨트롤러와 앱 노드 분리</li>
-        <li>파드 수의 주인은 하나 → Deployment에서 <code>replicas</code> 제거</li>
-        <li>KEDA 권한은 <b>EKS Pod Identity</b> + CloudWatch 읽기 3개 동작만</li>
-      </ul>
-      <div class="callout"><b>관찰</b> — HPA는 수십 초, KEDA는 CloudWatch 지연으로 2~3분 → 예측 가능한 트래픽은 cron으로 미리 확장</div>
-    </article>
-
-    <article class="slide" data-stage="all" data-time="2분">
-      <div class="kicker">STAGE 5 · 시연</div>
-      <h2>통합 시나리오</h2>
-      <table>
-        <tr><th>1</th><td><b>연쇄 확장</b> — ALB 부하 → KEDA가 WEB 확장 → 자리 부족 → Karpenter 노드 추가 → 종료 후 Consolidation</td></tr>
-        <tr><th>2</th><td><b>StatefulSet 복구</b> — DB 파드 삭제 → 같은 PVC · 같은 AZ 노드로 복구</td></tr>
-        <tr><th>3</th><td><b>롤링 업데이트 / 롤백</b> — WEB v1 → v2 (상단 배지 색이 바뀜) → 롤백</td></tr>
-        <tr><th>4</th><td><b>노드 점검</b> — <code>kubectl drain</code> 중 PDB로 서비스 유지</td></tr>
-      </table>
-      <div class="demo"><b>시연 팁</b> — 화면 상단의 WEB · WAS·DB 상태 점이 실시간으로 바뀝니다</div>
-    </article>
-
-    <article class="slide" data-stage="p" data-time="1분">
-      <div class="kicker">WRAP-UP</div>
-      <h2>배운 점과 다음 단계</h2>
-      <h3>배운 점</h3>
-      <ul>
-        <li>"Running"과 "서비스 가능"은 다르다 → Probe 설계가 장애 범위를 결정</li>
-        <li>설정은 런타임에 주입 — 빌드 도구가 어디까지 값을 굽는지 산출물을 열어 확인</li>
-        <li>스케일링은 지표의 지연까지 고려해야 한다</li>
-      </ul>
-      <h3>다음 단계</h3>
-      <ul>
-        <li><b>Secrets Manager + External Secrets</b> — Git의 평문 비밀번호 제거</li>
-        <li><b>Route 53 + ACM</b> — 도메인 · HTTPS</li>
-        <li>스키마 마이그레이션 도구(Flyway), 관측성(Prometheus · Grafana)</li>
-      </ul>
-      <div class="cover-btns">
-        <a class="btn primary" href="/petclinic/">PetClinic 열기</a>
-        <a class="btn" href="https://github.com/ZZGG2/petclinic-k8s-project" target="_blank" rel="noopener">GitHub 레포</a>
-      </div>
-    </article>
-
-    <div class="nav">
-      <button class="btn sm" id="prev" aria-label="이전">←</button>
-      <div class="dots" id="dots" role="tablist"></div>
-      <span class="time" id="time"></span>
-      <button class="btn sm primary" id="next" aria-label="다음">→</button>
-    </div>
-  </section>
+<div class="pager">
+  <button id="prev">이전</button>
+  <span id="count"></span>
+  <span class="sp"></span>
+  <span class="ver" id="ver">web v1</span>
+  <button id="next">다음</button>
+</div>
+</section>
 </main>
 
 <script>
 (function(){
-  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
-  var dotsEl = document.getElementById('dots');
-  var timeEl = document.getElementById('time');
-  var parts = Array.prototype.slice.call(document.querySelectorAll('.arch [data-s]'));
+  var slides = [].slice.call(document.querySelectorAll('.slide'));
+  var parts = [].slice.call(document.querySelectorAll('.arch .part'));
+  var tabs = document.getElementById('tabs');
   var cur = 0;
 
   slides.forEach(function(s, i){
     var b = document.createElement('button');
-    b.setAttribute('aria-label', (i+1) + '번 슬라이드');
+    b.textContent = s.getAttribute('data-tab');
     b.addEventListener('click', function(){ show(i); });
-    dotsEl.appendChild(b);
+    tabs.appendChild(b);
   });
 
   function paint(stage){
+    var n = stage === 'all' ? 99 : parseInt(stage, 10);
     parts.forEach(function(el){
-      var s = el.getAttribute('data-s');
-      el.classList.remove('is-hidden','is-ghost','is-new');
-      if (stage === 'all') { if (s === 'p') el.classList.add('is-ghost'); return; }
-      if (stage === 'p')   { if (s === 'p') el.classList.add('is-new'); return; }
-      var n = parseInt(stage, 10);
-      if (s === 'p') el.classList.add('is-hidden');
-      else if (parseInt(s, 10) > n) el.classList.add('is-hidden');
-      else if (parseInt(s, 10) === n) el.classList.add('is-new');
+      var s = parseInt(el.getAttribute('data-s'), 10);
+      el.classList.toggle('is-off', s > n);
+      el.classList.toggle('is-new', s === n);
     });
   }
 
   function show(i){
     cur = Math.max(0, Math.min(slides.length - 1, i));
-    slides.forEach(function(s, k){ s.classList.toggle('active', k === cur); });
-    Array.prototype.forEach.call(dotsEl.children, function(d, k){ d.classList.toggle('on', k === cur); });
+    slides.forEach(function(s, k){ s.classList.toggle('on', k === cur); });
+    [].forEach.call(tabs.children, function(b, k){ b.classList.toggle('on', k === cur); });
     paint(slides[cur].getAttribute('data-stage'));
-    timeEl.textContent = (cur + 1) + ' / ' + slides.length + ' · 권장 ' + slides[cur].getAttribute('data-time');
+    document.getElementById('count').textContent = (cur + 1) + ' / ' + slides.length;
     try { history.replaceState(null, '', '#' + cur); } catch (e) {}
   }
 
   document.getElementById('prev').addEventListener('click', function(){ show(cur - 1); });
   document.getElementById('next').addEventListener('click', function(){ show(cur + 1); });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-go]'), function(b){
-    b.addEventListener('click', function(){ show(parseInt(b.getAttribute('data-go'), 10)); });
-  });
   document.addEventListener('keydown', function(e){
-    if (e.target.closest && e.target.closest('input,textarea')) return;
-    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); show(cur + 1); }
-    if (e.key === 'ArrowLeft'  || e.key === 'PageUp') { e.preventDefault(); show(cur - 1); }
-    if (e.key === 'Home') show(0);
-    if (e.key === 'End')  show(slides.length - 1);
-    if (e.key === 'f' || e.key === 'F') toggleFs();
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); show(cur + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(cur - 1); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
+      else if (document.exitFullscreen) document.exitFullscreen();
+    }
   });
 
-  function toggleFs(){
-    if (!document.fullscreenElement) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
-    else if (document.exitFullscreen) document.exitFullscreen();
-  }
-  document.getElementById('fsBtn').addEventListener('click', toggleFs);
-
-  var root = document.documentElement;
-  var saved = null;
-  try { saved = localStorage.getItem('pc-theme'); } catch (e) {}
-  if (saved) root.setAttribute('data-theme', saved);
-  else if (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) root.setAttribute('data-theme', 'dark');
-  document.getElementById('themeBtn').addEventListener('click', function(){
-    var t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', t);
-    try { localStorage.setItem('pc-theme', t); } catch (e) {}
-  });
-
-  document.getElementById('ver').textContent = root.getAttribute('data-ver');
+  document.getElementById('ver').textContent = 'web ' + document.documentElement.getAttribute('data-ver');
 
   function probe(url, id){
     var el = document.getElementById(id);
     var ctrl = window.AbortController ? new AbortController() : null;
-    var timer = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 4000);
+    var t = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 4000);
     fetch(url, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
-      .then(function(r){ el.className = 'dot ' + (r.ok ? 'ok' : 'bad'); })
-      .catch(function(){ el.className = 'dot bad'; })
-      .then(function(){ clearTimeout(timer); });
+      .then(function(r){ el.className = r.ok ? 'ok' : 'bad'; })
+      .catch(function(){ el.className = 'bad'; })
+      .then(function(){ clearTimeout(t); });
   }
   function check(){
     if (location.protocol === 'file:') return;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 현재 상태 점검 (Stage 4 + 4.5-1 index.html + 4.5-2 Secrets Manager)
-# 사용법: bash scripts/check-now.sh
+# 클러스터 상태 점검 (워크로드 · External Secrets · HTTPS · 오토스케일링)
+# 사용법: source scripts/env.sh && bash scripts/verify.sh
 set -u
 NS=petclinic
 REGION="${REGION:-ap-northeast-2}"
@@ -26,7 +26,7 @@ echo "== 2. 이미지 태그"
 was_img=$(kubectl get deploy petclinic-was -n $NS -o jsonpath='{.spec.template.spec.containers[0].image}')
 web_img=$(kubectl get deploy petclinic-web -n $NS -o jsonpath='{.spec.template.spec.containers[0].image}')
 [[ "$was_img" == *":v1.2" ]] && ok "WAS 이미지 v1.2" || ng "WAS 이미지: $was_img"
-[[ "$web_img" == *":v1.1" ]] && ok "WEB 이미지 v1.1" || ng "WEB 이미지: $web_img"
+[[ "$web_img" == *":v1.2" ]] && ok "WEB 이미지 v1.2" || ng "WEB 이미지: $web_img"
 
 echo "== 3. External Secrets"
 chk "SecretStore Ready" bash -c "[ \"\$(kubectl get secretstore aws-secrets-manager -n $NS -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}')\" = True ]"
@@ -69,7 +69,7 @@ BASE="http://$ALB"; [ -n "${DOMAIN:-}" ] && BASE="https://$DOMAIN"
 ok "점검 대상: $BASE"
 c1=$(curl -s -o /tmp/idx.html -w '%{http_code}' -m 10 "$BASE/")
 [ "$c1" = 200 ] && ok "/ → 200" || ng "/ → $c1"
-grep -q 'data-ver="v1"' /tmp/idx.html && grep -q 'PetClinic on Amazon EKS' /tmp/idx.html && ok "/ 가 새 발표용 페이지(v1)" || ng "/ 가 새 index.html 이 아님"
+grep -q 'data-ver="v1"' /tmp/idx.html && grep -q 'PetClinic on Amazon EKS' /tmp/idx.html && ok "/ 프로젝트 소개 페이지 응답" || ng "/ 가 프로젝트 소개 페이지가 아님"
 c2=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$BASE/petclinic/owners?lastName=")
 [ "$c2" = 200 ] && ok "/petclinic/owners → 200 (WEB→WAS→DB)" || ng "/petclinic/owners → $c2"
 c3=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$BASE/healthz")

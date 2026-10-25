@@ -1,0 +1,8 @@
+# KEDA Helm values — 시스템 컨트롤러이므로 ng-system 노드에 고정
+# helm upgrade -i keda kedacore/keda -n keda --create-namespace --version 2.21.0 -f helm/keda-values.yaml
+nodeSelector:
+  role: system
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+    effect: NoSchedule

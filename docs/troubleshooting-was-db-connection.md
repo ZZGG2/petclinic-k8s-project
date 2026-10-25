@@ -32,7 +32,7 @@ env:
       -Dspring.profiles.active=jpa
       -Djdbc.url=jdbc:mysql://petclinic-db:3306/petclinic?useUnicode=true&characterEncoding=UTF-8
       -Djdbc.username=petclinic
-      -Djdbc.password=PetClinicApp#2026
+      -Djdbc.password=<APP_PASSWORD>
 ```
 
 파드가 뜨자마자 죽고, 재시작을 반복했습니다.
@@ -117,7 +117,7 @@ kubectl exec -n petclinic deploy/petclinic-was -- \
 
 # ③ DB 계정 로그인
 kubectl exec -n petclinic deploy/petclinic-db-mvp -- \
-  mysql -upetclinic -p'PetClinicApp#2026' -e "SELECT 1;"
+  mysql -upetclinic -p'<APP_PASSWORD>' -e "SELECT 1;"
 # 1   → 정상
 
 # ④ JVM이 받은 옵션
@@ -174,7 +174,7 @@ stringData:
     jdbc.driverClassName=com.mysql.cj.jdbc.Driver
     jdbc.url=jdbc:mysql://petclinic-db:3306/petclinic?useUnicode=true&characterEncoding=UTF-8
     jdbc.username=petclinic
-    jdbc.password=PetClinicApp#2026
+    jdbc.password=<APP_PASSWORD>
 ```
 
 ```yaml
@@ -221,7 +221,7 @@ public class T {
     try (var s = new java.net.Socket("petclinic-db", 3306)) { System.out.println("TCP  : OK"); }
     try (var c = java.sql.DriverManager.getConnection(
           "jdbc:mysql://petclinic-db:3306/petclinic?useUnicode=true&characterEncoding=UTF-8",
-          "petclinic", "PetClinicApp#2026")) {
+          "petclinic", "<APP_PASSWORD>")) {
       System.out.println("JDBC : OK  MySQL " + c.getMetaData().getDatabaseProductVersion());
     }
   }

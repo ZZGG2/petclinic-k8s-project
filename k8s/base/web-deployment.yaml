@@ -69,7 +69,7 @@ spec:
               mountPath: /var/log/nginx
       containers:
         - name: nginx
-          image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-web:v1.1"
+          image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com/petclinic-web:v1.2"
           ports:
             - name: http
               containerPort: 80

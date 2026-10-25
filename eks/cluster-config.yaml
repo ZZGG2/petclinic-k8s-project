@@ -1,7 +1,7 @@
 # ==============================================================================
 # eksctl ClusterConfig "템플릿" — ${...} 값은 Bastion에서 envsubst로 치환해 사용
 #   envsubst '${CLUSTER} ${REGION} ${VPC_ID} ${PUB_A} ${PUB_C} ${PRIV_NODE_A} ${PRIV_NODE_C}' \
-#     < eks/00-cluster-config.yaml > eks/cluster.rendered.yaml
+#     < eks/cluster-config.yaml > eks/cluster.rendered.yaml
 #   (원본은 수정하지 않으므로 git pull 충돌 없음 / *.rendered.yaml 은 .gitignore 대상)
 # ==============================================================================
 apiVersion: eksctl.io/v1alpha5

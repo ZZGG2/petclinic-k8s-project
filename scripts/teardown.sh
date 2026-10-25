@@ -1,113 +1,111 @@
 #!/usr/bin/env bash
-# 프로젝트 리소스 8단계 역순 안전 삭제 스크립트 (과금 방지)
-# 순서:
-#   1. 워크로드 삭제
-#   2. NodePool 삭제 (Karpenter 노드가 종료될 때까지 대기)
-#   3. Gateway/HTTPRoute 삭제 (ALB 소멸 확인)
-#   4. PVC 삭제 (EBS 소멸 확인)
-#   5. RDS 삭제
-#   6. eksctl delete cluster
-#   7. ECR 삭제
-#   8. NAT GW · EIP 잔여 확인
+# ==============================================================================
+# 전체 리소스 삭제 (과금 방지)
+#   사용법: source scripts/env.sh && bash scripts/teardown.sh
+#   순서: DNS 레코드 → 워크로드(ALB·EBS) → Karpenter 노드 → 컨트롤러 → RDS
+#        → EKS → IAM → Secrets Manager → ACM → ECR → (선택) Hosted Zone
+#   VPC · 서브넷 · NAT · EIP · Bastion 은 콘솔에서 만들었으므로 마지막에 콘솔에서 삭제
+# ==============================================================================
 set -u
+: "${REGION:?source scripts/env.sh 먼저 실행}"
+step() { printf '\n[%s] %s\n' "$1" "$2"; }
+ok()   { printf '  - %s\n' "$1"; }
 
-export AWS_PAGER=""
-REGION="${REGION:-ap-northeast-2}"
-CLUSTER="${CLUSTER:-petclinic-eks}"
-RDS_ID="${RDS_ID:-petclinic-rds}"
-NS="petclinic"
+read -r -p "클러스터(${CLUSTER})와 관련 AWS 리소스를 모두 삭제합니다. 계속하려면 delete 입력: " ans
+[ "$ans" = "delete" ] || { echo "취소"; exit 1; }
 
-ok() { printf '[✔] %s\n' "$1"; }
-info() { printf '[ℹ] %s\n' "$1"; }
+# 1. Route 53 레코드 (Alias A, ACM 검증 CNAME 등 — NS/SOA 제외)
+step 1 "Route 53 레코드 삭제 (${DOMAIN})"
+if [ -n "${ZONE_ID:-}" ] && [ "$ZONE_ID" != "None" ]; then
+  aws route53 list-resource-record-sets --hosted-zone-id "$ZONE_ID" --output json \
+    | jq -c '{Changes: [.ResourceRecordSets[] | select(.Type != "NS" and .Type != "SOA") | {Action:"DELETE", ResourceRecordSet:.}]}' > /tmp/r53-del.json
+  if [ "$(jq '.Changes | length' /tmp/r53-del.json)" -gt 0 ]; then
+    aws route53 change-resource-record-sets --hosted-zone-id "$ZONE_ID" --change-batch file:///tmp/r53-del.json >/dev/null && ok "레코드 삭제 완료"
+  else ok "삭제할 레코드 없음"; fi
+else ok "Hosted Zone 없음"; fi
 
-read -r -p "EKS 클러스터(${CLUSTER}), Karpenter 노드, ALB(Gateway), EBS, RDS(${RDS_ID}), ECR을 모두 삭제합니다. 계속하려면 delete 입력: " ans
-[ "$ans" = "delete" ] || { echo "취소했습니다."; exit 1; }
-
-# 1. 워크로드 삭제 (Gateway, PVC는 3, 4단계에서 명시적으로 확인하며 삭제하기 위해 Deployment/StatefulSet/Job/CronJob/KEDA 먼저 정리)
-info "1/8 워크로드(KEDA ScaledObject, Deployment, StatefulSet, Job, CronJob) 삭제 중..."
-kubectl delete -f keda/ --ignore-not-found 2>/dev/null
-kubectl delete deploy,sts,job,cronjob,hpa,pdb --all -n "$NS" --ignore-not-found 2>/dev/null
-ok "1/8 워크로드 삭제 완료"
-
-# 2. NodePool 삭제 및 Karpenter 프로비저닝 노드 종료 대기
-info "2/8 Karpenter NodePool 및 EC2NodeClass 삭제 중..."
-kubectl delete -f karpenter/nodepool.yaml --ignore-not-found 2>/dev/null
-for _ in $(seq 1 30); do
-  KARP_NODES=$(kubectl get nodes -l karpenter.sh/nodepool --no-headers 2>/dev/null | wc -l)
-  if [ "$KARP_NODES" -eq 0 ]; then
-    ok "2/8 Karpenter 동적 노드 모두 종료 확인"
-    break
-  fi
-  info "  Karpenter 노드 종료 대기 중... (남은 노드: ${KARP_NODES})"
-  sleep 10
-done
-kubectl delete -f karpenter/ec2nodeclass.yaml --ignore-not-found 2>/dev/null
-
-# 3. Gateway/HTTPRoute 삭제 및 ALB 소멸 확인
-info "3/8 Gateway/HTTPRoute 삭제 및 AWS ALB 소멸 대기 중..."
-ALB=$(kubectl get gateway petclinic-gateway -n "$NS" -o jsonpath='{.status.addresses[0].value}' 2>/dev/null)
-kubectl delete httproute,gateway --all -n "$NS" --ignore-not-found 2>/dev/null
-if [ -n "$ALB" ]; then
+# 2. 워크로드 (Gateway 삭제 → LBC가 ALB 삭제 / 네임스페이스 삭제 → PVC → EBS 삭제)
+step 2 "petclinic 워크로드 삭제"
+ALB_DNS=$(alb)
+krender dev | kubectl delete -f - --ignore-not-found --wait=false >/dev/null 2>&1
+kubectl delete namespace "$NS" --ignore-not-found --timeout=600s && ok "네임스페이스 삭제 완료"
+if [ -n "$ALB_DNS" ]; then
   for _ in $(seq 1 30); do
-    ALB_ARN=$(aws elbv2 describe-load-balancers --region "$REGION" --query "LoadBalancers[?DNSName=='$ALB'].LoadBalancerArn" --output text 2>/dev/null)
-    if [ -z "$ALB_ARN" ]; then
-      ok "3/8 AWS ALB 소멸 확인 완료"
-      break
-    fi
-    info "  ALB 삭제 대기 중... ($ALB)"
-    sleep 10
+    n=$(aws elbv2 describe-load-balancers --query "length(LoadBalancers[?DNSName=='${ALB_DNS}'])" --output text)
+    [ "$n" = 0 ] && { ok "ALB 삭제 확인"; break; }; sleep 10
   done
-else
-  ok "3/8 삭제할 ALB 없음"
 fi
 
-# 4. PVC 삭제 및 EBS 볼륨 소멸 확인
-info "4/8 PVC 삭제 및 AWS EBS 볼륨 소멸 대기 중..."
-kubectl delete pvc --all -n "$NS" --ignore-not-found 2>/dev/null
-kubectl delete namespace "$NS" --ignore-not-found 2>/dev/null
-sleep 15
-REM_VOLS=$(aws ec2 describe-volumes --region "$REGION" \
-  --filters Name=tag:kubernetes.io/created-for/pvc/namespace,Values="$NS" Name=status,Values=available,in-use \
-  --query 'length(Volumes)' --output text 2>/dev/null || echo "0")
-ok "4/8 PVC 삭제 완료 (남은 petclinic EBS 볼륨: ${REM_VOLS})"
-
-# 5. RDS 삭제
-info "5/8 Amazon RDS (${RDS_ID}) 삭제 확인 중..."
-if aws rds describe-db-instances --db-instance-identifier "$RDS_ID" --region "$REGION" >/dev/null 2>&1; then
-  aws rds delete-db-instance \
-    --db-instance-identifier "$RDS_ID" \
-    --skip-final-snapshot \
-    --delete-automated-backups \
-    --region "$REGION" >/dev/null
-  aws rds wait db-instance-deleted --db-instance-identifier "$RDS_ID" --region "$REGION"
-  ok "5/8 RDS 인스턴스(${RDS_ID}) 삭제 완료"
-else
-  ok "5/8 RDS 인스턴스(${RDS_ID}) 없음 (건너뜀)"
-fi
-
-# 6. eksctl delete cluster
-kubectl delete -f gateway/00-gatewayclass.yaml --ignore-not-found 2>/dev/null
-info "6/8 EKS 클러스터 (${CLUSTER}) 삭제 중..."
-eksctl delete cluster --name "$CLUSTER" --region "$REGION" --wait && ok "6/8 EKS 클러스터 삭제 완료"
-
-# 7. ECR 삭제
-info "7/8 ECR 리포지토리 삭제 중..."
-for repo in petclinic-web petclinic-was; do
-  aws ecr delete-repository --repository-name "$repo" --force --region "$REGION" >/dev/null 2>&1 || true
+# 3. Karpenter 노드
+step 3 "Karpenter 노드 정리"
+kubectl delete nodepool --all --ignore-not-found >/dev/null 2>&1
+for _ in $(seq 1 30); do
+  n=$(kubectl get nodeclaims --no-headers 2>/dev/null | wc -l)
+  [ "$n" -eq 0 ] && { ok "NodeClaim 0개"; break; }; sleep 10
 done
-ok "7/8 ECR 리포지토리(petclinic-web, petclinic-was) 삭제 완료"
+kubectl delete ec2nodeclass --all --ignore-not-found >/dev/null 2>&1
 
-# 8. NAT GW · EIP 등 잔여 과금 리소스 최종 확인
-info "8/8 잔여 과금 리소스(NAT Gateway, Elastic IP, ALB, EBS) 최종 점검..."
-NAT_COUNT=$(aws ec2 describe-nat-gateways --region "$REGION" --filter Name=state,Values=available,pending --query 'length(NatGateways)' --output text)
-EIP_COUNT=$(aws ec2 describe-addresses --region "$REGION" --query 'length(Addresses)' --output text)
-ALB_COUNT=$(aws elbv2 describe-load-balancers --region "$REGION" --query 'length(LoadBalancers)' --output text)
-VOL_COUNT=$(aws ec2 describe-volumes --region "$REGION" --filters Name=status,Values=available,in-use --query 'length(Volumes)' --output text)
+# 4. 컨트롤러
+step 4 "Helm 릴리스 / GatewayClass 삭제"
+helm uninstall keda -n keda >/dev/null 2>&1 && ok "KEDA"
+helm uninstall external-secrets -n external-secrets >/dev/null 2>&1 && ok "External Secrets"
+kubectl delete -f "$REPO_DIR/gateway/gatewayclass.yaml" --ignore-not-found >/dev/null 2>&1
+helm uninstall aws-load-balancer-controller -n kube-system >/dev/null 2>&1 && ok "LB Controller"
 
-echo "========================================================"
-ok "Teardown 완료! 현재 리전(${REGION}) 잔여 리소스 현황:"
-echo "  - 활성 NAT Gateway : ${NAT_COUNT}"
-echo "  - 할당된 Elastic IP : ${EIP_COUNT}"
-echo "  - 남은 LoadBalancer: ${ALB_COUNT}"
-echo "  - 남은 EBS 볼륨     : ${VOL_COUNT}"
-echo "========================================================"
+# 5. RDS
+step 5 "RDS 삭제"
+if aws rds describe-db-instances --db-instance-identifier "$RDS_ID" >/dev/null 2>&1; then
+  aws rds delete-db-instance --db-instance-identifier "$RDS_ID" --skip-final-snapshot --delete-automated-backups >/dev/null
+  aws rds wait db-instance-deleted --db-instance-identifier "$RDS_ID" && ok "RDS 삭제 완료"
+else ok "RDS 없음"; fi
+aws rds delete-db-subnet-group --db-subnet-group-name petclinic-db-subnet-grp >/dev/null 2>&1 && ok "DB 서브넷 그룹"
+RDS_SG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=petclinic-rds-sg --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null)
+[ -n "$RDS_SG" ] && [ "$RDS_SG" != None ] && aws ec2 delete-security-group --group-id "$RDS_SG" 2>/dev/null && ok "RDS 보안 그룹"
+
+# 6. EKS (노드그룹, IRSA/Karpenter/Pod Identity 관련 CloudFormation 스택 포함)
+step 6 "EKS 클러스터 삭제 (10~15분)"
+eksctl delete cluster --name "$CLUSTER" --region "$REGION" --wait && ok "클러스터 삭제 완료"
+
+# 7. 직접 만든 IAM 역할 / 정책
+step 7 "IAM 정리"
+for role in petclinic-keda-cloudwatch petclinic-eso-secretsmanager; do
+  for pol in $(aws iam list-role-policies --role-name "$role" --query 'PolicyNames[]' --output text 2>/dev/null); do
+    aws iam delete-role-policy --role-name "$role" --policy-name "$pol"
+  done
+  aws iam delete-role --role-name "$role" 2>/dev/null && ok "$role"
+done
+LBC_POLICY=$(aws iam list-policies --scope Local --query "Policies[?PolicyName=='AWSLoadBalancerControllerIAMPolicy-PetClinic'].Arn" --output text)
+[ -n "$LBC_POLICY" ] && aws iam delete-policy --policy-arn "$LBC_POLICY" 2>/dev/null && ok "LBC 정책"
+
+# 8. Secrets Manager
+step 8 "Secrets Manager 삭제"
+for s in petclinic/dev/db petclinic/prod/db; do
+  aws secretsmanager delete-secret --secret-id "$s" --force-delete-without-recovery >/dev/null 2>&1 && ok "$s"
+done
+
+# 9. ACM (ALB가 지워진 뒤에만 삭제 가능)
+step 9 "ACM 인증서 삭제"
+[ -n "${CERT_ARN:-}" ] && [ "$CERT_ARN" != None ] && aws acm delete-certificate --certificate-arn "$CERT_ARN" 2>/dev/null && ok "$DOMAIN"
+
+# 10. ECR
+step 10 "ECR 리포지토리 삭제"
+for repo in petclinic-web petclinic-was; do
+  aws ecr delete-repository --repository-name "$repo" --force >/dev/null 2>&1 && ok "$repo"
+done
+
+# 11. Hosted Zone (도메인을 계속 쓸 거면 남겨 둠, 월 $0.50)
+step 11 "Route 53 Hosted Zone"
+read -r -p "  Hosted Zone(${DOMAIN})도 삭제할까요? 가비아 네임서버를 되돌리기 전까지 도메인이 응답하지 않습니다 [y/N]: " z
+if [ "$z" = y ] && [ -n "${ZONE_ID:-}" ] && [ "$ZONE_ID" != None ]; then
+  aws route53 delete-hosted-zone --id "$ZONE_ID" >/dev/null && ok "삭제 완료"
+else ok "유지"; fi
+
+# 12. 남은 과금 리소스 확인
+step 12 "남은 리소스 (콘솔에서 VPC · Bastion · NAT · EIP 삭제)"
+ok "NAT Gateway : $(aws ec2 describe-nat-gateways --filter Name=state,Values=available,pending --query 'length(NatGateways)' --output text)"
+ok "Elastic IP  : $(aws ec2 describe-addresses --query 'length(Addresses)' --output text)"
+ok "ALB / NLB   : $(aws elbv2 describe-load-balancers --query 'length(LoadBalancers)' --output text)"
+ok "EBS 볼륨    : $(aws ec2 describe-volumes --query 'length(Volumes)' --output text)  (Bastion 루트 볼륨 1개는 정상)"
+ok "EC2 실행 중 : $(aws ec2 describe-instances --filters Name=instance-state-name,Values=running --query 'length(Reservations[].Instances[])' --output text)  (Bastion 1대는 정상)"
+echo
+echo "콘솔 삭제 순서: Bastion EC2 → NAT Gateway → Elastic IP 해제 → VPC 삭제(서브넷·라우팅 테이블·IGW 함께 삭제됨)"
