@@ -13,8 +13,9 @@ resources:
   # 공통 설정
   - namespace.yaml
   - limit-quota.yaml            # [Stage 3-2] LimitRange(컨테이너 기본값/상한) + ResourceQuota(네임스페이스 총량)
-  - config-secret.yaml          # ConfigMap(petclinic-config, empty.sql) + Secret(petclinic-db-secret)
-  - was-dbconfig-secret.yaml    # WAS data-access.properties
+  - secret-store.yaml           # [Stage 4.5-2] AWS Secrets Manager 연결 (ESO SecretStore)
+  - config-secret.yaml          # ConfigMap(petclinic-config, empty.sql) + ExternalSecret(petclinic-db-secret)
+  - was-dbconfig-secret.yaml    # ExternalSecret → WAS data-access.properties (템플릿)
   - db-seed-sql-cm.yaml         # Seed Job이 실행할 스키마/데이터 SQL
   - db-report-cronjob.yaml      # [Stage 3-5] 5분마다 DB 현황 집계
   # WAS

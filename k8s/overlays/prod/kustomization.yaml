@@ -11,9 +11,12 @@ resources:
   - db-externalname-svc.yaml   # Service petclinic-db → RDS 엔드포인트
   - db-seed-job.yaml           # RDS에 스키마/데이터 적재 + 앱 계정 DML 권한
 
-# base 리소스의 일부 값만 덮어쓰기 (Strategic Merge Patch)
+# base 리소스의 일부 값만 덮어쓰기
+#  - [Stage 4.5-2] ExternalSecret 2개가 읽는 Secrets Manager 키를 petclinic/prod/db 로 (JSON 6902)
 patches:
-  - path: db-admin-user-patch.yaml
+  - path: externalsecret-key-patch.yaml
+    target:
+      kind: ExternalSecret
 
 labels:
   - pairs:
