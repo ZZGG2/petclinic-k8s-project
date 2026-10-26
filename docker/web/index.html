@@ -25,7 +25,7 @@ a{color:inherit}
 .tabs{display:flex;gap:0;padding:0 32px;border-bottom:1px solid var(--line);overflow-x:auto}
 .tabs button{border:0;background:none;font:14px var(--font);color:var(--muted);padding:12px 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
 .tabs button.on{color:var(--fg);font-weight:600;border-bottom-color:var(--accent)}
-main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:32px;padding:24px 32px 40px;max-width:1680px;margin:0 auto}
+main{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:32px;padding:24px 32px 40px;max-width:1680px;margin:0 auto}
 @media (max-width:1080px){ main{grid-template-columns:1fr;padding:20px 16px} .top,.tabs{padding-left:16px;padding-right:16px} }
 .fig{align-self:start;position:sticky;top:16px}
 @media (max-width:1080px){ .fig{position:static} }
@@ -47,6 +47,13 @@ tr:last-child td,tr:last-child th{border-bottom:1px solid var(--line)}
 th{width:88px;color:var(--muted);font-weight:600}
 .note{margin-top:16px;padding:10px 14px;background:var(--soft);border-left:3px solid var(--line);font-size:14px}
 .note b{color:var(--ink)}
+pre{margin:6px 0 8px;padding:10px 12px;background:#f6f8fa;border:1px solid var(--line);border-radius:4px;font:12px/1.6 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+pre code{background:none;padding:0;font:inherit}
+pre .c{color:#6a737d}
+.chk{font-size:14px;color:#3b4754;margin:0 0 4px}
+.cover{min-height:420px;display:flex;flex-direction:column;justify-content:center}
+.cover h1{font-size:38px;margin:0 0 10px}
+.lead{font-size:17px;color:var(--muted)}
 .issue{margin-top:16px;padding:10px 14px;border-left:3px solid var(--accent);background:var(--accent-soft);font-size:14px}
 .pager{display:flex;align-items:center;gap:10px;margin-top:26px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
 .pager .sp{flex:1}
@@ -131,56 +138,56 @@ th{width:88px;color:var(--muted);font-weight:600}
 <symbol id="i-g-priv" viewBox="0 0 40 40"><g fill="none" fill-rule="evenodd"><path fill="#00a4a6" d="M0 0h40v40H0z"/><path fill="#fff" d="M19.536 22.049c1.106 0 2.006.899 2.006 2.005s-.9 2.006-2.006 2.006-2.006-.9-2.006-2.006.9-2.005 2.006-2.005m-.524 4.958v3.494h1v-3.489a3 3 0 0 0 2.53-2.958 3.01 3.01 0 0 0-3.006-3.005 3.01 3.01 0 0 0-3.006 3.005 3.006 3.006 0 0 0 2.482 2.953M10 33.014h19.012V18H10zm4.046-20.53A5.49 5.49 0 0 1 19.529 7a5.49 5.49 0 0 1 5.483 5.484V17H14.046zM29.512 17h-3.5v-4.516A6.49 6.49 0 0 0 19.529 6a6.49 6.49 0 0 0-6.483 6.484V17H9.5a.5.5 0 0 0-.5.5v16.014a.5.5 0 0 0 .5.5h20.012a.5.5 0 0 0 .5-.5V17.5a.5.5 0 0 0-.5-.5"/></g></symbol>
     </defs>
 <g class="part" data-s="1"><rect class="g-cloud" x="88" y="8" width="804" height="604" rx="4"/><use href="#i-g-cloud" x="88" y="8" width="26" height="26"/><text class="gl" x="122" y="26">AWS Cloud · 서울 리전 (ap-northeast-2)</text></g>
-<g class="part ic" data-s="1"><rect class="hl" x="17" y="171" width="50" height="50" rx="8"/><use href="#i-users" x="22" y="176" width="40" height="40"/><text class="lb" x="42.0" y="234" text-anchor="middle">사용자</text></g>
+<g data-k="user" class="part ic" data-s="1"><rect class="hl" x="17" y="171" width="50" height="50" rx="8"/><use href="#i-users" x="22" y="176" width="40" height="40"/><text class="lb" x="42.0" y="234" text-anchor="middle">사용자</text></g>
 <g class="part ic" data-s="5"><rect class="hl" x="115" y="39" width="50" height="50" rx="8"/><use href="#i-route53" x="120" y="44" width="40" height="40"/><text class="lb" x="140.0" y="100" text-anchor="middle">Route 53</text></g>
 <g class="part ic" data-s="5"><rect class="hl" x="195" y="39" width="50" height="50" rx="8"/><use href="#i-acm" x="200" y="44" width="40" height="40"/><text class="lb" x="220.0" y="100" text-anchor="middle">ACM</text></g>
 <g class="part ic" data-s="1"><rect class="hl" x="515" y="39" width="50" height="50" rx="8"/><use href="#i-ecr" x="520" y="44" width="40" height="40"/><text class="lb" x="540.0" y="100" text-anchor="middle">ECR</text></g>
-<g class="part ic" data-s="4"><rect class="hl" x="615" y="39" width="50" height="50" rx="8"/><use href="#i-cw" x="620" y="44" width="40" height="40"/><text class="lb" x="640.0" y="100" text-anchor="middle">CloudWatch</text></g>
-<g class="part ic" data-s="5"><rect class="hl" x="715" y="39" width="50" height="50" rx="8"/><use href="#i-sm" x="720" y="44" width="40" height="40"/><text class="lb" x="740.0" y="100" text-anchor="middle">Secrets Manager</text></g>
+<g data-k="keda" class="part ic" data-s="4"><rect class="hl" x="615" y="39" width="50" height="50" rx="8"/><use href="#i-cw" x="620" y="44" width="40" height="40"/><text class="lb" x="640.0" y="100" text-anchor="middle">CloudWatch</text></g>
+<g data-k="eso" class="part ic" data-s="5"><rect class="hl" x="715" y="39" width="50" height="50" rx="8"/><use href="#i-sm" x="720" y="44" width="40" height="40"/><text class="lb" x="740.0" y="100" text-anchor="middle">Secrets Manager</text></g>
 <g class="part" data-s="1"><rect class="g-vpc" x="104" y="118" width="772" height="482" rx="2"/><use href="#i-g-vpc" x="104" y="118" width="24" height="24"/><text class="gl" x="134" y="135">VPC 10.0.0.0/16</text></g>
 <g class="part" data-s="1"><rect class="g-pub" x="124" y="148" width="732" height="96" rx="2"/><use href="#i-g-pub" x="124" y="148" width="20" height="20"/><text class="gl" x="150" y="163">Public subnet × 2 (2a / 2c)</text></g>
-<g class="part ic" data-s="1"><rect class="hl" x="85" y="177" width="40" height="40" rx="8"/><use href="#i-igw" x="90" y="182" width="30" height="30"/></g>
-<g class="part ic" data-s="1"><rect class="hl" x="395" y="169" width="52" height="52" rx="8"/><use href="#i-alb" x="400" y="174" width="42" height="42"/><text class="lb" x="450" y="192" text-anchor="start">ALB</text><text class="sb" x="450" y="206" text-anchor="start">Gateway API</text></g>
+<g data-k="req" class="part ic" data-s="1"><rect class="hl" x="85" y="177" width="40" height="40" rx="8"/><use href="#i-igw" x="90" y="182" width="30" height="30"/></g>
+<g data-k="alb" class="part ic" data-s="1"><rect class="hl" x="395" y="169" width="52" height="52" rx="8"/><use href="#i-alb" x="400" y="174" width="42" height="42"/><text class="lb" x="450" y="192" text-anchor="start">ALB</text><text class="sb" x="450" y="206" text-anchor="start">Gateway API</text></g>
 <g class="part ic" data-s="1"><rect class="hl" x="575" y="175" width="46" height="46" rx="8"/><use href="#i-nat" x="580" y="180" width="36" height="36"/><text class="lb" x="598.0" y="232" text-anchor="middle">NAT Gateway</text></g>
 <g class="part ic" data-s="1"><rect class="hl" x="775" y="175" width="46" height="46" rx="8"/><use href="#i-ec2" x="780" y="180" width="36" height="36"/><text class="lb" x="798.0" y="232" text-anchor="middle">Bastion</text></g>
 <g class="part" data-s="1"><rect class="g-priv" x="124" y="256" width="732" height="244" rx="2"/><use href="#i-g-priv" x="124" y="256" width="20" height="20"/><text class="gl" x="150" y="271">Private subnet × 2 · EKS 노드</text></g>
 <g class="part" data-s="1"><rect class="g-eks" x="140" y="282" width="700" height="210" rx="6"/><use href="#i-eks" x="148" y="288" width="22" height="22"/><text class="gl" x="176" y="304">Amazon EKS 1.36</text></g>
 <g class="part" data-s="1"><rect class="g-ng" x="154" y="316" width="196" height="164" rx="6"/><text class="gs" x="252" y="333" text-anchor="middle">ng-system · 시스템 노드 2대</text></g>
-<g class="part row" data-s="1"><rect x="167" y="342" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="356.5" text-anchor="middle">LB Controller</text></g>
-<g class="part row" data-s="5"><rect x="167" y="368" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="382.5" text-anchor="middle">External Secrets</text></g>
-<g class="part row" data-s="4"><rect x="167" y="394" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="408.5" text-anchor="middle">KEDA</text></g>
-<g class="part row" data-s="4"><rect x="167" y="420" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="434.5" text-anchor="middle">Karpenter</text></g>
-<g class="part row" data-s="1"><rect x="167" y="446" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="460.5" text-anchor="middle">Add-ons 6종</text></g>
-<g class="part" data-s="4"><rect class="g-karp" x="364" y="316" width="462" height="164" rx="6"/><use href="#i-spot" x="370" y="320" width="16" height="16"/><text class="gs" x="818" y="331" text-anchor="end">Karpenter 노드 (Spot)</text></g>
+<g data-k="-" class="part row" data-s="1"><rect x="167" y="342" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="356.5" text-anchor="middle">LB Controller</text></g>
+<g data-k="eso" class="part row" data-s="5"><rect x="167" y="368" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="382.5" text-anchor="middle">External Secrets</text></g>
+<g data-k="keda" class="part row" data-s="4"><rect x="167" y="394" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="408.5" text-anchor="middle">KEDA</text></g>
+<g data-k="karpenter" class="part row" data-s="4"><rect x="167" y="420" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="434.5" text-anchor="middle">Karpenter</text></g>
+<g data-k="-" class="part row" data-s="1"><rect x="167" y="446" width="170" height="21" rx="6"/><text class="bt sm" x="252.0" y="460.5" text-anchor="middle">Add-ons 6종</text></g>
+<g data-k="karp" class="part" data-s="4"><rect class="g-karp" x="364" y="316" width="462" height="164" rx="6"/><use href="#i-spot" x="370" y="320" width="16" height="16"/><text class="gs" x="818" y="331" text-anchor="end">Karpenter 노드 (Spot)</text></g>
 <g class="part" data-s="1"><rect class="g-ns" x="376" y="338" width="438" height="134" rx="6"/><text class="gs" x="806" y="352" text-anchor="end">namespace: petclinic</text></g>
-<g class="part pod" data-s="1"><rect x="390" y="358" width="120" height="46" rx="6"/><text class="bt" x="450.0" y="378.0" text-anchor="middle">WEB</text><text class="bs" x="450.0" y="394.0" text-anchor="middle">Nginx</text></g>
-<g class="part pod" data-s="1"><rect x="524" y="358" width="120" height="46" rx="6"/><text class="bt" x="584.0" y="378.0" text-anchor="middle">WAS</text><text class="bs" x="584.0" y="394.0" text-anchor="middle">Tomcat 11</text></g>
-<g class="part pod" data-s="1"><rect x="658" y="358" width="120" height="46" rx="6"/><text class="bt" x="718.0" y="378.0" text-anchor="middle">DB</text><text class="bs" x="718.0" y="394.0" text-anchor="middle">MySQL 8.4</text></g>
-<g class="part ic" data-s="2"><rect class="hl" x="781" y="361" width="34" height="34" rx="8"/><use href="#i-ebs" x="786" y="366" width="24" height="24"/></g>
+<g data-k="web" class="part pod" data-s="1"><rect x="390" y="358" width="120" height="46" rx="6"/><text class="bt" x="450.0" y="378.0" text-anchor="middle">WEB</text><text class="bs" x="450.0" y="394.0" text-anchor="middle">Nginx</text></g>
+<g data-k="was" class="part pod" data-s="1"><rect x="524" y="358" width="120" height="46" rx="6"/><text class="bt" x="584.0" y="378.0" text-anchor="middle">WAS</text><text class="bs" x="584.0" y="394.0" text-anchor="middle">Tomcat 11</text></g>
+<g data-k="db" class="part pod" data-s="1"><rect x="658" y="358" width="120" height="46" rx="6"/><text class="bt" x="718.0" y="378.0" text-anchor="middle">DB</text><text class="bs" x="718.0" y="394.0" text-anchor="middle">MySQL 8.4</text></g>
+<g data-k="db" class="part ic" data-s="2"><rect class="hl" x="781" y="361" width="34" height="34" rx="8"/><use href="#i-ebs" x="786" y="366" width="24" height="24"/></g>
 <g class="part chip" data-s="3"><rect x="394" y="410" width="112" height="18" rx="9"/><text x="450.0" y="423" text-anchor="middle">+ log-agent</text></g>
-<g class="part chip" data-s="4"><rect x="394" y="430" width="112" height="18" rx="9"/><text x="450.0" y="443" text-anchor="middle">KEDA 2~4</text></g>
-<g class="part chip" data-s="3"><rect x="528" y="410" width="112" height="18" rx="9"/><text x="584.0" y="423" text-anchor="middle">Probe 3종</text></g>
-<g class="part chip" data-s="4"><rect x="528" y="430" width="112" height="18" rx="9"/><text x="584.0" y="443" text-anchor="middle">HPA 2~4</text></g>
-<g class="part chip" data-s="2"><rect x="662" y="410" width="112" height="18" rx="9"/><text x="718.0" y="423" text-anchor="middle">StatefulSet</text></g>
-<g class="part chip" data-s="5"><rect x="662" y="430" width="112" height="18" rx="9"/><text x="718.0" y="443" text-anchor="middle">ExternalSecret</text></g>
-<g class="part chip" data-s="2"><rect x="394" y="450" width="70" height="18" rx="9"/><text x="429.0" y="463" text-anchor="middle">Seed Job</text></g>
+<g data-k="keda" class="part chip" data-s="4"><rect x="394" y="430" width="112" height="18" rx="9"/><text x="450.0" y="443" text-anchor="middle">KEDA 2~4</text></g>
+<g data-k="probe" class="part chip" data-s="3"><rect x="528" y="410" width="112" height="18" rx="9"/><text x="584.0" y="423" text-anchor="middle">Probe 3종</text></g>
+<g data-k="hpa" class="part chip" data-s="4"><rect x="528" y="430" width="112" height="18" rx="9"/><text x="584.0" y="443" text-anchor="middle">HPA 2~4</text></g>
+<g data-k="db" class="part chip" data-s="2"><rect x="662" y="410" width="112" height="18" rx="9"/><text x="718.0" y="423" text-anchor="middle">StatefulSet</text></g>
+<g data-k="eso" class="part chip" data-s="5"><rect x="662" y="430" width="112" height="18" rx="9"/><text x="718.0" y="443" text-anchor="middle">ExternalSecret</text></g>
+<g data-k="seed" class="part chip" data-s="2"><rect x="394" y="450" width="70" height="18" rx="9"/><text x="429.0" y="463" text-anchor="middle">Seed Job</text></g>
 <g class="part chip" data-s="3"><rect x="470" y="450" width="66" height="18" rx="9"/><text x="503.0" y="463" text-anchor="middle">CronJob</text></g>
-<g class="part chip" data-s="3"><rect x="542" y="450" width="96" height="18" rx="9"/><text x="590.0" y="463" text-anchor="middle">Quota · PDB</text></g>
+<g data-k="pdb" class="part chip" data-s="3"><rect x="542" y="450" width="96" height="18" rx="9"/><text x="590.0" y="463" text-anchor="middle">Quota · PDB</text></g>
 <g class="part chip" data-s="2"><rect x="644" y="450" width="86" height="18" rx="9"/><text x="687.0" y="463" text-anchor="middle">Kustomize</text></g>
 <g class="part" data-s="1"><rect class="g-priv" x="124" y="512" width="732" height="76" rx="2"/><use href="#i-g-priv" x="124" y="512" width="20" height="20"/><text class="gl" x="150" y="527">Private subnet × 2 · DB</text></g>
-<g class="part ic" data-s="2"><rect class="hl" x="655" y="525" width="50" height="50" rx="8"/><use href="#i-rds" x="660" y="530" width="40" height="40"/><text class="lb" x="650" y="555" text-anchor="end">RDS MySQL (prod)</text></g>
-<path class="part flow " data-s="1" d="M64 196 H88" marker-end="url(#ah)"/>
-<path class="part flow " data-s="1" d="M122 196 H396" marker-end="url(#ah)"/>
-<path class="part flow " data-s="1" d="M421 220 V250 H450 V354" marker-end="url(#ah)"/>
-<path class="part flow " data-s="1" d="M510 381 H520" marker-end="url(#ah)"/>
-<path class="part flow " data-s="1" d="M644 381 H654" marker-end="url(#ah)"/>
-<path class="part flow sub" data-s="2" d="M812 378 H846 V548 H704" marker-end="url(#ah)"/>
+<g data-k="rds" class="part ic" data-s="2"><rect class="hl" x="655" y="525" width="50" height="50" rx="8"/><use href="#i-rds" x="660" y="530" width="40" height="40"/><text class="lb" x="650" y="555" text-anchor="end">RDS MySQL (prod)</text></g>
+<path data-k="req" class="part flow " data-s="1" d="M64 196 H88" marker-end="url(#ah)"/>
+<path data-k="req" class="part flow " data-s="1" d="M122 196 H396" marker-end="url(#ah)"/>
+<path data-k="req" class="part flow " data-s="1" d="M421 220 V250 H450 V354" marker-end="url(#ah)"/>
+<path data-k="req" class="part flow " data-s="1" d="M510 381 H520" marker-end="url(#ah)"/>
+<path data-k="req" class="part flow " data-s="1" d="M644 381 H654" marker-end="url(#ah)"/>
+<path data-k="rds" class="part flow sub" data-s="2" d="M812 378 H846 V548 H704" marker-end="url(#ah)"/>
 <path class="part flow faint" data-s="1" d="M540 106 V280" marker-end="url(#ah)"/>
 <path class="part flow sub" data-s="5" d="M42 172 V64 H116" marker-end="url(#ah)"/>
 <path class="part flow sub" data-s="5" d="M244 64 H421 V170" marker-end="url(#ah)"/>
-<path class="part flow sub" data-s="4" d="M436 172 V140 H640 V106" marker-end="url(#ah)"/>
-<path class="part flow sub" data-s="5" d="M740 106 V312" marker-end="url(#ah)"/>
-<path class="part flow sub" data-s="4" d="M337 431 H362" marker-end="url(#ah)"/>
+<path data-k="keda" class="part flow sub" data-s="4" d="M436 172 V140 H640 V106" marker-end="url(#ah)"/>
+<path data-k="eso" class="part flow sub" data-s="5" d="M740 106 V312" marker-end="url(#ah)"/>
+<path data-k="karpenter" class="part flow sub" data-s="4" d="M337 431 H362" marker-end="url(#ah)"/>
 <path id="p-main" d="M62 196 H421 V250 H450 V381 H718" fill="none" stroke="none"/>
 <g class="part" data-s="1"><circle class="pkt" r="4" opacity="1"><animateMotion dur="3.3s" begin="0.0s" repeatCount="indefinite"><mpath href="#p-main"/></animateMotion></circle><circle class="pkt" r="4" opacity="0"><set attributeName="opacity" to="1" begin="1.1s"/><animateMotion dur="3.3s" begin="1.1s" repeatCount="indefinite"><mpath href="#p-main"/></animateMotion></circle><circle class="pkt" r="4" opacity="0"><set attributeName="opacity" to="1" begin="2.2s"/><animateMotion dur="3.3s" begin="2.2s" repeatCount="indefinite"><mpath href="#p-main"/></animateMotion></circle></g>
   </svg>
@@ -195,60 +202,23 @@ th{width:88px;color:var(--muted);font-weight:600}
 <section aria-live="polite">
 
 <article class="slide" data-stage="all" data-tab="소개">
-  <p class="step">소개</p>
-  <h1>Spring PetClinic을 Amazon EKS에<br>단계적으로 배포한 프로젝트</h1>
-  <p>Nginx(WEB)와 Tomcat(WAS)을 컨테이너 이미지로 만들고, MySQL과 함께 3-Tier로 EKS에 올렸습니다. 처음부터 전부 구성하지 않고 가장 단순한 형태를 먼저 띄운 다음, 하루에 한 주제씩 기능을 더했습니다.</p>
-  <table>
-    <tr><th>기간</th><td>2026년 10월</td></tr>
-    <tr><th>형태</th><td>개인 프로젝트</td></tr>
-    <tr><th>주요 기술</th><td>EKS, Gateway API, Kustomize, StatefulSet, RDS, HPA, KEDA, Karpenter, External Secrets, Route 53, ACM</td></tr>
-  </table>
-  <h3>진행 순서</h3>
-  <table>
-    <tr><th>Stage 1</th><td>3-Tier 기본 구성</td></tr>
-    <tr><th>Stage 2</th><td>DB 영속성, 최소 권한, dev/prod 분리</td></tr>
-    <tr><th>Stage 3</th><td>파드 안정성과 자원 관리</td></tr>
-    <tr><th>Stage 4</th><td>오토스케일링 (HPA, KEDA, Karpenter)</td></tr>
-    <tr><th>Stage 5</th><td>Secrets Manager, Route 53 + HTTPS</td></tr>
-  </table>
-</article>
-
-<article class="slide" data-stage="all" data-tab="전체 구조">
-  <p class="step">전체 구조</p>
-  <h2>최종 아키텍처</h2>
-  <p>사용자 요청은 Route 53 → ALB(HTTPS) → WEB → WAS → DB 순서로 흐릅니다.</p>
-  <table>
-    <tr><th>네트워크</th><td>VPC 1개, 가용 영역 2개. Public / Private(노드) / Private(DB) 서브넷 각 2개</td></tr>
-    <tr><th>노드</th><td>시스템 컨트롤러는 관리형 노드그룹 <code>ng-system</code>, 애플리케이션은 Karpenter가 만든 Spot 노드</td></tr>
-    <tr><th>환경</th><td>Kustomize <code>dev</code>(클러스터 내부 MySQL)와 <code>prod</code>(RDS). WAS 설정은 두 환경이 같음</td></tr>
-    <tr><th>확장</th><td>WAS는 CPU(HPA), WEB은 ALB 요청 수(KEDA), 노드는 대기 중인 파드(Karpenter)</td></tr>
-    <tr><th>보안</th><td>DB 계정 최소 권한, 비밀번호는 Secrets Manager, AWS 권한은 Pod Identity / IRSA로 컨트롤러별 분리</td></tr>
-  </table>
-  <h3>진행하면서 지킨 원칙</h3>
-  <ul>
-    <li>한 번에 하나씩 추가하고, 추가할 때마다 동작을 확인한다.</li>
-    <li>설정과 비밀번호는 이미지에 넣지 않고 실행 시점에 주입한다.</li>
-    <li>권한은 필요한 만큼만 준다.</li>
-  </ul>
+  <div class="cover">
+    <h1>PetClinic on Amazon EKS</h1>
+    <p class="lead">Spring PetClinic 3-Tier를 Amazon EKS에 단계적으로 구축</p>
+  </div>
 </article>
 
 <article class="slide" data-stage="1" data-tab="Stage 1">
   <p class="step">Stage 1</p>
   <h2>3-Tier 기본 구성</h2>
   <p>부가 기능 없이 ALB → WEB → WAS → DB가 연결되는 것부터 확인했습니다.</p>
-  <h3>구성</h3>
   <ul>
     <li>콘솔에서 VPC, 서브넷 6개, IGW, NAT Gateway, Bastion 생성 후 <code>eksctl</code>로 클러스터 생성</li>
     <li>WAS 이미지: Maven(<code>-P MySQL</code>) 빌드 후 Tomcat 11 이미지로 복사하는 멀티 스테이지 빌드</li>
+    <li>DB 접속 정보는 이미지에 넣지 않고 <code>data-access.properties</code>를 Secret으로 주입</li>
     <li>외부 노출: Ingress 대신 Gateway API (GatewayClass, Gateway, HTTPRoute)</li>
     <li>ALB 설정은 <code>LoadBalancerConfiguration</code>, 대상 그룹 설정은 <code>TargetGroupConfiguration</code>으로 분리</li>
   </ul>
-  <div class="issue"><b>문제 → 해결</b><br>
-    WAS가 DB에 붙지 않았던 원인이 세 가지였습니다.<br>
-    1) <code>catalina.sh</code>가 <code>JAVA_OPTS</code>를 셸에서 다시 해석해 <code>&amp;</code>, <code>#</code>이 깨짐 → <code>JDK_JAVA_OPTIONS</code> 사용<br>
-    2) 설정값을 바꿀 방법이 필요 → <code>data-access.properties</code>를 Secret으로 만들어 <code>subPath</code>로 교체<br>
-    3) Maven 리소스 필터링이 XML의 <code>${jdbc.url}</code>까지 빌드 시점 값으로 바꿔 둠 → 빌드 후 플레이스홀더 복원
-  </div>
 </article>
 
 <article class="slide" data-stage="2" data-tab="Stage 2">
@@ -260,20 +230,18 @@ th{width:88px;color:var(--muted);font-weight:600}
     <li><b>Kustomize</b>: 공통은 <code>base</code>, DB만 <code>overlays/dev</code>(StatefulSet)와 <code>overlays/prod</code>(RDS)로 분리</li>
     <li><b>ExternalName Service</b>: 서비스 이름 <code>petclinic-db</code>는 그대로 두고 prod에서는 RDS 주소를 가리키게 함</li>
   </ul>
-  <div class="note"><b>확인한 것</b><br>DB 파드를 삭제해도 데이터 유지 · 애플리케이션 계정의 <code>DROP TABLE</code> 거부 · WAS 수정 없이 RDS로 전환</div>
 </article>
 
 <article class="slide" data-stage="3" data-tab="Stage 3">
   <p class="step">Stage 3</p>
   <h2>파드 안정성과 자원 관리</h2>
   <table>
-    <tr><th>Probe</th><td>startup, liveness는 DB를 거치지 않는 정적 리소스로, readiness는 매번 DB를 조회하는 <code>/owners</code>로 검사. <code>/vets</code>는 캐시 때문에 DB가 멈춰도 200을 반환해서 쓰지 않음</td></tr>
+    <tr><th>Probe</th><td>startup, liveness는 DB를 거치지 않는 정적 리소스로, readiness는 매번 DB를 조회하는 <code>/owners</code>로 검사</td></tr>
     <tr><th>자원</th><td>requests / limits, JVM 힙 비율(<code>MaxRAMPercentage=75</code>), LimitRange, ResourceQuota</td></tr>
     <tr><th>가용성</th><td>replicas 2, AZ·노드 분산, 롤링 업데이트 <code>maxUnavailable: 0</code>, PDB <code>minAvailable: 1</code></td></tr>
     <tr><th>로그</th><td>WEB 파드에 네이티브 사이드카(<code>initContainers</code> + <code>restartPolicy: Always</code>)로 접속 로그 수집</td></tr>
     <tr><th>배치 작업</th><td>5분마다 DB 현황을 집계하는 CronJob (중복 실행 금지, 실행 시간 제한)</td></tr>
   </table>
-  <div class="note"><b>확인한 것</b><br>DB를 멈추면 WAS는 트래픽에서 빠지지만 재시작하지 않음 · 노드를 비우는 동안에도 응답 유지 · 파드가 1개일 때는 PDB가 drain을 막음</div>
 </article>
 
 <article class="slide" data-stage="4" data-tab="Stage 4">
@@ -290,7 +258,6 @@ th{width:88px;color:var(--muted);font-weight:600}
     <li>HPA와 KEDA가 파드 수를 관리하므로 Deployment에서 <code>replicas</code> 제거</li>
     <li>KEDA의 CloudWatch 권한은 EKS Pod Identity로 필요한 동작 3개만 허용</li>
   </ul>
-  <div class="note"><b>관찰</b><br>HPA는 수십 초 안에 반응했지만 KEDA는 CloudWatch 지표 지연 때문에 2~3분이 걸렸습니다. 예측 가능한 트래픽은 cron 트리거로 미리 늘려 두는 방식이 맞다고 판단했습니다.</div>
 </article>
 
 <article class="slide" data-stage="5" data-tab="Stage 5">
@@ -301,34 +268,93 @@ th{width:88px;color:var(--muted);font-weight:600}
     <li>Git에 평문으로 있던 DB 비밀번호를 Secrets Manager(<code>petclinic/dev/db</code>)로 이동</li>
     <li>External Secrets가 값을 읽어 기존과 같은 이름의 Secret을 만들어 주므로 파드 매니페스트는 그대로</li>
     <li>WAS 설정 파일은 템플릿으로 조립하고 비밀번호 한 줄만 Secrets Manager 값으로 채움</li>
-    <li>읽기 권한은 Pod Identity로 <code>petclinic/*</code> 비밀에만 허용, 이후 애플리케이션 비밀번호 교체까지 진행</li>
+    <li>읽기 권한은 Pod Identity로 <code>petclinic/*</code> 비밀에만 허용</li>
   </ul>
   <h3>Route 53 + ACM + HTTPS</h3>
   <ul>
     <li>가비아에서 구입한 <code>zzgg2.cloud</code>의 네임서버를 Route 53으로 위임</li>
     <li>ACM 인증서(<code>zzgg2.cloud</code>, <code>*.zzgg2.cloud</code>)를 DNS 검증으로 발급</li>
     <li>Gateway에 HTTPS 리스너 추가, HTTP는 HTTPRoute 리다이렉트(301)로 HTTPS로 이동</li>
-    <li>Route 53 Alias 레코드로 도메인을 ALB에 연결. Gateway는 그대로 두어 ALB 주소 유지</li>
+    <li>Route 53 Alias 레코드로 도메인을 ALB에 연결</li>
   </ul>
-  <div class="issue"><b>문제 → 해결</b><br>Secret을 External Secrets로 옮길 때 잘못된 값이 들어가 새 WAS가 기동하지 못했습니다. 기존 WAS는 예전 값으로 계속 동작하고 있었고(<code>maxUnavailable: 0</code>), 실행 중인 파드에서 원래 값을 확인해 복구했습니다. <code>subPath</code>로 마운트한 파일은 Secret이 바뀌어도 갱신되지 않아 재시작이 필요하다는 것도 이때 확인했습니다.</div>
 </article>
 
-<article class="slide" data-stage="all" data-tab="정리">
-  <p class="step">정리</p>
-  <h2>정리</h2>
-  <h3>배운 점</h3>
-  <ul>
-    <li>파드가 Running이어도 서비스가 되는 상태는 아닐 수 있습니다. Probe를 어떻게 나누느냐에 따라 장애 범위가 달라졌습니다.</li>
-    <li>설정을 실행 시점에 주입하려면 빌드 도구가 어떤 값을 미리 넣어 두는지 결과물을 직접 열어 봐야 했습니다.</li>
-    <li>스케일링 기준은 지표가 들어오는 시점까지 고려해야 했습니다.</li>
-  </ul>
-  <h3>다음에 해 보고 싶은 것</h3>
-  <ul>
-    <li>Argo CD로 배포 자동화 (지금은 Bastion에서 직접 적용)</li>
-    <li>Flyway로 스키마 변경 이력 관리</li>
-    <li>Prometheus, Grafana로 지표 수집과 대시보드 구성</li>
-  </ul>
-  <p style="margin-top:18px"><a href="https://github.com/ZZGG2/petclinic-k8s-project" target="_blank" rel="noopener">github.com/ZZGG2/petclinic-k8s-project</a></p>
+<article class="slide" data-stage="all" data-focus="db,was,probe" data-tab="Stage 6 · 장애 대응">
+  <p class="step">Stage 6 · 테스트 1 / 4</p>
+  <h2>장애 대응</h2>
+  <h3>DB가 멈췄을 때 Probe 동작</h3>
+<pre><code>kubectl scale statefulset petclinic-db -n petclinic --replicas=0
+kubectl get pods -n petclinic -l tier=was
+<span class="c"># NAME                   READY   STATUS    RESTARTS</span>
+<span class="c"># petclinic-was-xxxxx    0/1     Running   0</span></code></pre>
+  <p class="chk">readiness가 실패해 WAS가 Service에서 빠지고, liveness는 정상이라 재시작하지 않습니다. DB를 다시 켜면 재시작 없이 돌아옵니다.</p>
+  <h3>DB 파드 삭제 후 복구</h3>
+<pre><code>kubectl delete pod petclinic-db-0 -n petclinic
+<span class="c"># 같은 이름으로 재생성, 같은 PVC 재사용</span>
+kubectl get pod petclinic-db-0 -n petclinic -o wide
+kubectl get pvc data-petclinic-db-0 -n petclinic</code></pre>
+  <p class="chk">같은 PVC에 다시 붙어 데이터가 유지됩니다. EBS 볼륨이 있는 AZ에 들어갈 노드가 없으면 Karpenter가 그 AZ에 노드를 만듭니다.</p>
+</article>
+
+<article class="slide" data-stage="all" data-focus="alb,keda,hpa,karpenter,karp" data-tab="Stage 6 · 확장">
+  <p class="step">Stage 6 · 테스트 2 / 4</p>
+  <h2>오토스케일링</h2>
+  <h3>부하 발생 → HPA, KEDA</h3>
+<pre><code>kubectl run load -n default --rm -it \
+  --image=curlimages/curl:8.10.1 -- sh -c '
+  U=https://zzgg2.cloud/petclinic/
+  for i in $(seq 8); do
+    (while :; do curl -so /dev/null $U; done) &amp;
+  done; wait'
+
+kubectl get hpa,scaledobject -n petclinic -w</code></pre>
+  <p class="chk">WAS는 CPU 50% 기준이라 수십 초 안에 2 → 4개로, WEB은 CloudWatch 요청 수 기준이라 지표 지연 때문에 2~3분 뒤에 늘어납니다.</p>
+  <h3>Karpenter 노드 추가와 정리</h3>
+<pre><code>kubectl create deployment inflate -n default --replicas=0 \
+  --image=public.ecr.aws/eks-distro/kubernetes/pause:3.7
+kubectl set resources deployment inflate -n default --requests=cpu=1
+kubectl scale deployment inflate -n default --replicas=4
+kubectl get nodeclaims -w</code></pre>
+  <p class="chk">대기 중인 파드에 맞춰 Spot 노드가 생기고, 다시 0개로 줄이면 1분 뒤 Consolidation으로 노드가 정리됩니다.</p>
+</article>
+
+<article class="slide" data-stage="all" data-focus="web,pdb,karp" data-tab="Stage 6 · 배포 운영">
+  <p class="step">Stage 6 · 테스트 3 / 4</p>
+  <h2>배포와 운영</h2>
+  <h3>롤링 업데이트와 롤백</h3>
+<pre><code>kubectl set image deploy/petclinic-web -n petclinic \
+  nginx=$ECR_URI/petclinic-web:v2.1
+kubectl rollout status deploy/petclinic-web -n petclinic
+kubectl rollout undo deploy/petclinic-web -n petclinic</code></pre>
+  <p class="chk"><code>maxUnavailable: 0</code>이라 새 파드가 Ready가 된 뒤에 기존 파드가 내려갑니다. 이 페이지 하단의 버전 표시가 v1과 v2 사이에서 바뀝니다.</p>
+  <h3>노드 점검 (drain + PDB)</h3>
+<pre><code>kubectl drain &lt;node&gt; --ignore-daemonsets --delete-emptydir-data
+<span class="c"># evicting pod petclinic/petclinic-was-xxxxx</span>
+<span class="c"># (replicas가 1개면) Cannot evict pod as it would</span>
+<span class="c">#   violate the pod's disruption budget.</span></code></pre>
+  <p class="chk">PDB <code>minAvailable: 1</code> 때문에 한 번에 하나씩만 옮겨지고, 노드를 비우는 동안에도 요청은 계속 처리됩니다.</p>
+</article>
+
+<article class="slide" data-stage="all" data-focus="seed,eso,alb,user" data-tab="Stage 6 · 보안">
+  <p class="step">Stage 6 · 테스트 4 / 4</p>
+  <h2>권한과 비밀 관리</h2>
+  <h3>애플리케이션 계정 최소 권한</h3>
+<pre><code>kubectl exec -n petclinic petclinic-db-0 -- \
+  mysql -upetclinic -p"$APP_PW" petclinic -e "DROP TABLE visits;"
+<span class="c"># ERROR 1142 (42000): DROP command denied to user 'petclinic'</span></code></pre>
+  <h3>비밀번호 교체</h3>
+<pre><code><span class="c"># 1) Secrets Manager 값 변경 → 2) K8s Secret 즉시 동기화</span>
+aws secretsmanager put-secret-value --secret-id petclinic/dev/db \
+  --secret-string "$NEW_JSON"
+kubectl annotate externalsecret petclinic-db-secret -n petclinic \
+  force-sync=$(date +%s) --overwrite
+<span class="c"># 3) Seed Job으로 ALTER USER → 4) WAS 재시작</span>
+kubectl delete job petclinic-db-seed -n petclinic &amp;&amp; kapply
+kubectl rollout restart deploy/petclinic-was -n petclinic</code></pre>
+  <p class="chk">Secrets Manager → K8s Secret → DB 계정 → WAS 순서로 반영됩니다. CronJob은 다음 실행부터 새 값을 사용합니다.</p>
+  <h3>HTTPS 리다이렉트</h3>
+<pre><code>curl -sI http://zzgg2.cloud/ | head -1
+<span class="c"># HTTP/1.1 301 Moved Permanently</span></code></pre>
 </article>
 
 <div class="pager">
@@ -355,12 +381,13 @@ th{width:88px;color:var(--muted);font-weight:600}
     tabs.appendChild(b);
   });
 
-  function paint(stage){
+  function paint(stage, focus){
     var n = stage === 'all' ? 99 : parseInt(stage, 10);
+    var f = focus ? focus.split(',') : null;
     parts.forEach(function(el){
       var s = parseInt(el.getAttribute('data-s'), 10);
       el.classList.toggle('is-off', s > n);
-      el.classList.toggle('is-new', s === n);
+      el.classList.toggle('is-new', f ? f.indexOf(el.getAttribute('data-k')) >= 0 : s === n);
     });
   }
 
@@ -368,7 +395,7 @@ th{width:88px;color:var(--muted);font-weight:600}
     cur = Math.max(0, Math.min(slides.length - 1, i));
     slides.forEach(function(s, k){ s.classList.toggle('on', k === cur); });
     [].forEach.call(tabs.children, function(b, k){ b.classList.toggle('on', k === cur); });
-    paint(slides[cur].getAttribute('data-stage'));
+    paint(slides[cur].getAttribute('data-stage'), slides[cur].getAttribute('data-focus'));
     document.getElementById('count').textContent = (cur + 1) + ' / ' + slides.length;
     try { history.replaceState(null, '', '#' + cur); } catch (e) {}
   }
